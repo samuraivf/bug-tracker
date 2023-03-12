@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/app"
+)
 
 func main() {
-	fmt.Println("Hello World!")
+	app.Run()
 }
