@@ -1,7 +1,7 @@
 package handler
 
 const (
-	auth = "/auth"
+	auth       = "/auth"
 	authSignUp = auth + "/sign-up"
 	authSignIn = auth + "/sign-in"
 )

@@ -8,7 +8,7 @@ import (
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
 )
 
-type Handler struct {}
+type Handler struct{}
 
 func NewHandler() *Handler {
 	return &Handler{}
