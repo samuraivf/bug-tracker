@@ -4,6 +4,8 @@ go 1.19
 
 require github.com/labstack/echo/v4 v4.10.2
 
+require github.com/golang-jwt/jwt/v5 v5.0.0-rc.1 // indirect
+
 require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect

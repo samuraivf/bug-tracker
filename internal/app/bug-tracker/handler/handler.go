@@ -6,12 +6,15 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/services"
 )
 
-type Handler struct{}
+type Handler struct {
+	service *services.Service
+}
 
-func NewHandler() *Handler {
-	return &Handler{}
+func NewHandler(s *services.Service) *Handler {
+	return &Handler{s}
 }
 
 func (h *Handler) signUp(c echo.Context) error {
