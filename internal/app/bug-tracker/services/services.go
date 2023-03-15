@@ -1,5 +1,7 @@
 package services
 
+import "github.com/rs/zerolog"
+
 type Service struct {
 	Auth
 }
@@ -11,8 +13,8 @@ type Auth interface {
 	ParseRefreshToken(refreshToken string) (*TokenData, error)
 }
 
-func NewService() *Service {
+func NewService(log *zerolog.Logger) *Service {
 	return &Service{
-		Auth: NewAuth(),
+		Auth: NewAuth(log),
 	}
 }

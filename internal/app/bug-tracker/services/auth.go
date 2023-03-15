@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -19,7 +20,9 @@ var (
 	errTokenClaimsInvalidType = errors.New("error token claims are not of type *TokenClaims")
 )
 
-type AuthService struct{}
+type AuthService struct {
+	log *zerolog.Logger
+}
 
 type TokenData struct {
 	Username string `json:"username"`
@@ -31,8 +34,8 @@ type TokenClaims struct {
 	TokenData
 }
 
-func NewAuth() *AuthService {
-	return &AuthService{}
+func NewAuth(log *zerolog.Logger) *AuthService {
+	return &AuthService{log}
 }
 
 func (s *AuthService) GenerateAccessToken(username string, userID uint64) (string, error) {

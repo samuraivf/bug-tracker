@@ -2,9 +2,11 @@ module github.com/samuraivf/bug-tracker
 
 go 1.19
 
-require github.com/labstack/echo/v4 v4.10.2
-
-require github.com/golang-jwt/jwt/v5 v5.0.0-rc.1 // indirect
+require (
+	github.com/labstack/echo/v4 v4.10.2
+	github.com/golang-jwt/jwt/v5 v5.0.0-rc.1
+	github.com/rs/zerolog v1.29.0
+)
 
 require (
 	github.com/go-playground/locales v0.14.1 // indirect
