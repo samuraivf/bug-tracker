@@ -12,7 +12,7 @@ import (
 
 type Handler struct {
 	service *services.Service
-	log *zerolog.Logger
+	log     *zerolog.Logger
 }
 
 func NewHandler(s *services.Service, log *zerolog.Logger) *Handler {
