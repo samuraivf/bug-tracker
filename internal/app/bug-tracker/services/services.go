@@ -2,7 +2,10 @@ package services
 
 import (
 	"github.com/rs/zerolog"
+
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/models"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
 )
 
 type Auth interface {
@@ -13,9 +16,10 @@ type Auth interface {
 }
 
 type User interface {
-	GetUserByEmail()
-	GetUserById()
-	CreateUser()
+	GetUserByEmail(email string) (*models.User, error)
+	GetUserById(id uint64) (*models.User, error) 
+	GetUserByUsername(username string) (*models.User, error)
+	CreateUser(userData *dto.SignUpDto) (uint64, error)
 }
 
 type Service struct {
