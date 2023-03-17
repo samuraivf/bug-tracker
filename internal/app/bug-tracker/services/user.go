@@ -1,9 +1,16 @@
 package services
 
 import (
+	"errors"
+
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/models"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository"
+	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	errInvalidPassword = errors.New("error invalid password")
 )
 
 type UserService struct {
@@ -27,5 +34,28 @@ func (s *UserService) GetUserByUsername(username string) (*models.User, error) {
 }
 
 func (s *UserService) CreateUser(userData *dto.SignUpDto) (uint64, error) {
+	passwordHash, err := generatePasswordHash(userData.Password)
+	if err != nil {
+		return 0, err
+	}
+
+	userData.Password = string(passwordHash)
+
 	return s.repo.CreateUser(userData)
+}
+
+func generatePasswordHash(password string) ([]byte, error) {
+	return bcrypt.GenerateFromPassword([]byte(password), 12)
+}
+
+func (s *UserService) ValidateUser(email, password string) (*models.User, error) {
+	user, err := s.GetUserByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return nil, errInvalidPassword
+	}
+
+	return user, nil
 }

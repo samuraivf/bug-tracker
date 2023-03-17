@@ -1,6 +1,6 @@
 package dto
 
 type SignInDto struct {
-	Email    string `json:"email" validate:"reqired,email"`
-	Password string `json:"password" validate:"reqired,min=8"`
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8"`
 }

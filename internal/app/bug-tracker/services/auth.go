@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	AccessTokenTTL  = time.Hour * 24
-	RefreshTokenTTL = AccessTokenTTL * 30
+	accessTokenTTL  = time.Hour * 24
+	refreshTokenTTL = accessTokenTTL * 30
 	jwtAccessKey    = "asdfdgfhaseh281b"
 	jwtRefreshKey   = "sgdhksakjajhsdfh"
 )
@@ -38,10 +38,14 @@ func NewAuth(log *zerolog.Logger) *AuthService {
 	return &AuthService{log}
 }
 
+func (s *AuthService) GetRefreshTokenTTL() time.Duration {
+	return refreshTokenTTL
+}
+
 func (s *AuthService) GenerateAccessToken(username string, userID uint64) (string, error) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, &TokenClaims{
 		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(AccessTokenTTL)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(accessTokenTTL)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 		TokenData{
@@ -56,7 +60,7 @@ func (s *AuthService) GenerateAccessToken(username string, userID uint64) (strin
 func (s *AuthService) GenerateRefreshToken(username string, userID uint64) (string, error) {
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, &TokenClaims{
 		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(RefreshTokenTTL)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(refreshTokenTTL)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 		TokenData{

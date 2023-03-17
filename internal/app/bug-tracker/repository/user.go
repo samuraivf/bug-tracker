@@ -24,16 +24,16 @@ func NewUserRepo(db *sql.DB, log *zerolog.Logger) *UserRepository {
 }
 
 func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
-	var user *models.User
+	user := new(models.User)
 
-	row := r.db.QueryRow("SELECT * FROM users WHERE email = ?", email)
+	row := r.db.QueryRow("SELECT * FROM users WHERE email = $1", email)
 	err := row.Scan(&user.ID, &user.Name, &user.Username, &user.Password, &user.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			r.log.Error().Err(err)
+			r.log.Error().Err(err).Msg("")
 			return nil, ErrUserNotFound
 		}
-		r.log.Error().Err(err)
+		r.log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	r.log.Info().Msgf("Get user with email: %s", email)
@@ -42,16 +42,16 @@ func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 }
 
 func (r *UserRepository) GetUserById(id uint64) (*models.User, error) {
-	var user *models.User
+	user := new(models.User)
 
-	row := r.db.QueryRow("SELECT * FROM users WHERE id = ?", id)
+	row := r.db.QueryRow("SELECT * FROM users WHERE id = $1", id)
 	err := row.Scan(&user.ID, &user.Name, &user.Username, &user.Password, &user.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			r.log.Error().Err(err)
+			r.log.Error().Err(err).Msg("")
 			return nil, ErrUserNotFound
 		}
-		r.log.Error().Err(err)
+		r.log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	r.log.Info().Msgf("Get user with id: %d", id)
@@ -60,16 +60,16 @@ func (r *UserRepository) GetUserById(id uint64) (*models.User, error) {
 }
 
 func (r *UserRepository) GetUserByUsername(username string) (*models.User, error) {
-	var user *models.User
+	user := new(models.User)
 
-	row := r.db.QueryRow("SELECT * FROM users WHERE username = ?", username)
+	row := r.db.QueryRow("SELECT * FROM users WHERE username = $1", username)
 	err := row.Scan(&user.ID, &user.Name, &user.Username, &user.Password, &user.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			r.log.Error().Err(err)
+			r.log.Error().Err(err).Msg("")
 			return nil, ErrUserNotFound
 		}
-		r.log.Error().Err(err)
+		r.log.Error().Err(err).Msg("")
 		return nil, err
 	}
 	r.log.Info().Msgf("Get user with username: %s", username)
@@ -78,21 +78,17 @@ func (r *UserRepository) GetUserByUsername(username string) (*models.User, error
 }
 
 func (r *UserRepository) CreateUser(userData *dto.SignUpDto) (uint64, error) {
-	result, err := r.db.Exec(
-		"INSERT INTO users (name, username, email, password) VALUES ($1, $2, $3, $4)",
+	result := r.db.QueryRow(
+		"INSERT INTO users (name, username, email, password) VALUES ($1, $2, $3, $4) RETURNING id",
 		userData.Name,
 		userData.Username,
 		userData.Email,
 		userData.Password,
 	)
-	if err != nil {
-		log.Error().Err(err)
-		return 0, err
-	}
 
-	userID, err := result.LastInsertId()
-	if err != nil {
-		log.Error().Err(err)
+	var userID uint64
+	if err := result.Scan(&userID); err != nil {
+		log.Error().Err(err).Msg("")
 		return 0, err
 	}
 	log.Info().Msgf("Create user: id = %d", userID)

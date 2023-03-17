@@ -2,6 +2,7 @@ package handler
 
 import (
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -14,7 +15,10 @@ import (
 )
 
 func CreateServer() {
-	logger := zerolog.New(os.Stdout).Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	logger := zerolog.New(os.Stdout).Output(zerolog.ConsoleWriter{
+		Out: os.Stderr,
+		TimeFormat: time.RFC3339,
+	}).With().Timestamp().Logger()
 
 	if err := initConfig(); err != nil {
 		logger.Fatal().Err(err).Msg("")
