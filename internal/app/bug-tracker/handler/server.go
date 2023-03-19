@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -10,13 +11,14 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/redis"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/services"
 )
 
 func CreateServer() {
 	logger := zerolog.New(os.Stdout).Output(zerolog.ConsoleWriter{
-		Out: os.Stderr,
+		Out:        os.Stderr,
 		TimeFormat: time.RFC3339,
 	}).With().Timestamp().Logger()
 
@@ -47,8 +49,20 @@ func CreateServer() {
 	logger.Info().Msg("Open PostgreSQL db connection")
 	defer db.Close()
 
+	redisConfig := &redis.Config{
+		Host: viper.GetString("redis.host"),
+		Port: viper.GetString("redis.port"),
+	}
+
+	redisClient, err := redis.NewClient(context.Background(), redisConfig)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("")
+	}
+	logger.Info().Msg("Redis started")
+
+	redisRepo := redis.NewRedis(redisClient, &logger)
 	repo := repository.NewRepository(db, &logger)
-	s := services.NewService(repo, &logger)
+	s := services.NewService(repo, redisRepo, &logger)
 	h := NewHandler(s, &logger)
 
 	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
@@ -65,8 +79,21 @@ func CreateServer() {
 	}))
 	e.Use(middleware.Recover())
 
-	e.POST(authSignUp, h.signUp)
-	e.POST(authSignIn, h.signIn)
+	auth := e.Group(auth)
+	{
+		auth.POST(signUp, h.signUp)
+		auth.POST(signIn, h.signIn, h.isUnauthorized)
+		auth.GET(refresh, h.refresh)
+		auth.GET(logout, h.logout)
+	}
+
+	e.GET("/hello", func(c echo.Context) error {
+		data, err := getUserData(c)
+		if err != nil {
+			return c.String(404, err.Error())
+		}
+		return c.String(200, data.Username)
+	}, h.isAuthorized)
 
 	e.Logger.Fatal(e.Start(":" + viper.GetString("server-port")))
 }

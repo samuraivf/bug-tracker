@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -71,6 +72,65 @@ func (h *Handler) signIn(c echo.Context) error {
 	return h.createTokens(c, user.Username, user.ID)
 }
 
+func (h *Handler) refresh(c echo.Context) error {
+	refreshToken, err := c.Cookie("refreshToken")
+
+	if err != nil || refreshToken == nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidRefreshToken.Error()))
+	}
+
+	refreshTokenData, err := h.service.Auth.ParseRefreshToken(refreshToken.Value)
+
+	if err != nil {
+		c.SetCookie(&http.Cookie{
+			Name:     "refreshToken",
+			Value:    "",
+			Expires:  time.Unix(0, 0),
+			HttpOnly: true,
+		})
+		return c.JSON(http.StatusUnauthorized, err.Error())
+	}
+
+	key := fmt.Sprintf("%s:%s", refreshTokenData.Username, refreshTokenData.TokenID)
+	_, err = h.service.Redis.GetRefreshToken(c.Request().Context(), key)
+
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, newErrorMessage(errTokenDoesNotExist.Error()))
+	}
+
+	return h.createTokens(c, refreshTokenData.Username, refreshTokenData.UserID)
+}
+
+func (h *Handler) logout(c echo.Context) error {
+	refreshToken, err := c.Cookie("refreshToken")
+
+	if err != nil || refreshToken == nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidRefreshToken.Error()))
+	}
+
+	refreshTokenData, err := h.service.Auth.ParseRefreshToken(refreshToken.Value)
+
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidRefreshToken.Error()))
+	}
+
+	key := fmt.Sprintf("%s:%s", refreshTokenData.Username, refreshTokenData.TokenID)
+	err = h.service.Redis.DeleteRefreshToken(c.Request().Context(), key)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(err.Error()))
+	}
+
+	c.SetCookie(&http.Cookie{
+		Name:     "refreshToken",
+		Value:    "",
+		Expires:  time.Unix(0, 0),
+		HttpOnly: true,
+	})
+	
+	return c.JSON(http.StatusOK, nil)
+}
+
 func (h *Handler) createTokens(c echo.Context, username string, userID uint64) error {
 	accessToken, err := h.service.Auth.GenerateAccessToken(username, userID)
 	if err != nil {
@@ -84,14 +144,25 @@ func (h *Handler) createTokens(c echo.Context, username string, userID uint64) e
 		return c.JSON(http.StatusInternalServerError, newErrorMessage(err.Error()))
 	}
 
-	c.SetCookie(&http.Cookie{
-		Name: "refreshToken",
-		Value: refreshTokenData,
-		Expires: time.Now().Add(h.service.Auth.GetRefreshTokenTTL()),
-		HttpOnly: true,
-	})
+	key := fmt.Sprintf("%s:%s", username, refreshTokenData.ID)
+	err = h.service.Redis.SetRefreshToken(c.Request().Context(), key, refreshTokenData.RefreshToken)
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(err.Error()))
+	}
+
+	h.setRefreshToken(c, refreshTokenData.RefreshToken)
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"accessToken": accessToken,
+	})
+}
+
+func (h *Handler) setRefreshToken(c echo.Context, val string) {
+	c.SetCookie(&http.Cookie{
+		Name:     "refreshToken",
+		Value:    val,
+		Expires:  time.Now().Add(h.service.Auth.GetRefreshTokenTTL()),
+		HttpOnly: true,
 	})
 }

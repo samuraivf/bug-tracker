@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 )
 
@@ -25,8 +26,14 @@ type AuthService struct {
 }
 
 type TokenData struct {
+	TokenID  string `json:"tokenId"`
 	Username string `json:"username"`
 	UserID   uint64 `json:"userId"`
+}
+
+type RefreshTokenData struct {
+	ID           string
+	RefreshToken string
 }
 
 type TokenClaims struct {
@@ -57,19 +64,27 @@ func (s *AuthService) GenerateAccessToken(username string, userID uint64) (strin
 	return accessToken.SignedString([]byte(jwtAccessKey))
 }
 
-func (s *AuthService) GenerateRefreshToken(username string, userID uint64) (string, error) {
+func (s *AuthService) GenerateRefreshToken(username string, userID uint64) (*RefreshTokenData, error) {
+	tokenID := uuid.NewString()
+
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, &TokenClaims{
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(refreshTokenTTL)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 		TokenData{
+			TokenID: tokenID,
 			Username: username,
 			UserID:   userID,
 		},
 	})
 
-	return refreshToken.SignedString([]byte(jwtRefreshKey))
+	token, err := refreshToken.SignedString([]byte(jwtRefreshKey))
+	if err != nil {
+		return nil, err
+	}
+
+	return &RefreshTokenData{RefreshToken: token, ID: tokenID}, nil
 }
 
 func (s *AuthService) ParseAccessToken(accessToken string) (*TokenData, error) {

@@ -1,7 +1,9 @@
 package handler
 
 const (
-	auth       = "/auth"
-	authSignUp = auth + "/sign-up"
-	authSignIn = auth + "/sign-in"
+	auth    = "/auth"
+	signUp  = "/sign-up"
+	signIn  = "/sign-in"
+	logout  = "/logout"
+	refresh = "/refresh"
 )

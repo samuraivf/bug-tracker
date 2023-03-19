@@ -5,3 +5,7 @@ db:
   port: 5432
   user: postgres
   name: db
+
+redis:
+  host: localhost
+  port: 6379
