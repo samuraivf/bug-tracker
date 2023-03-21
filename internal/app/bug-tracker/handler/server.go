@@ -92,6 +92,7 @@ func CreateServer() {
 		if err != nil {
 			return c.String(404, err.Error())
 		}
+		KafkaProducer()
 		return c.String(200, data.Username)
 	}, h.isAuthorized)
 
