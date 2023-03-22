@@ -6,7 +6,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/rs/zerolog"
 )
 
 const (
@@ -21,9 +20,7 @@ var (
 	errTokenClaimsInvalidType = errors.New("error token claims are not of type *TokenClaims")
 )
 
-type AuthService struct {
-	log *zerolog.Logger
-}
+type AuthService struct {}
 
 type TokenData struct {
 	TokenID  string `json:"tokenId"`
@@ -41,8 +38,8 @@ type TokenClaims struct {
 	TokenData
 }
 
-func NewAuth(log *zerolog.Logger) *AuthService {
-	return &AuthService{log}
+func NewAuth() *AuthService {
+	return &AuthService{}
 }
 
 func (s *AuthService) GetRefreshTokenTTL() time.Duration {

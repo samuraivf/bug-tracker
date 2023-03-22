@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/services"
 )
 
@@ -12,6 +14,22 @@ const (
 	authorizationHeader = "Authorization"
 	userDataCtx         = "userData"
 )
+
+func Logger(logger log.Log) echo.MiddlewareFunc {
+	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		LogURI:    true,
+		LogStatus: true,
+		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			logger.Internal().
+				Info().
+				Str("URI", v.URI).
+				Int("status", v.Status).
+				Msg("request")
+
+			return nil
+		},
+	})
+}
 
 func (h *Handler) isUnauthorized(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {

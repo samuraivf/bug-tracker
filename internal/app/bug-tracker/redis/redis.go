@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/rs/zerolog"
+
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log"
 )
 
 type Redis interface {
@@ -18,7 +19,7 @@ type Redis interface {
 
 type RedisRepository struct {
 	redis *redis.Client
-	log   *zerolog.Logger
+	log   log.Log
 }
 
 func NewClient(ctx context.Context, cfg *Config) (*redis.Client, error) {
@@ -36,7 +37,7 @@ func NewClient(ctx context.Context, cfg *Config) (*redis.Client, error) {
 	return client, nil
 }
 
-func NewRedis(client *redis.Client, log *zerolog.Logger) Redis {
+func NewRedis(client *redis.Client, log log.Log) Redis {
 	return &RedisRepository{
 		redis: client,
 		log:   log,
@@ -68,10 +69,10 @@ func (r *RedisRepository) SetRefreshToken(ctx context.Context, key, refreshToken
 
 	err = r.redis.Set(ctx, key, refreshToken, TTL).Err()
 	if err != nil {
-		r.log.Error().Err(err).Msg("")
+		r.log.Error(err)
 		return err
 	}
-	r.log.Info().Msgf("Set refresh token. Key: %s", key)
+	r.log.Infof("Set refresh token. Key: %s", key)
 
 	return nil
 }
@@ -89,10 +90,10 @@ func (r *RedisRepository) GetRefreshToken(ctx context.Context, key string) (stri
 func (r *RedisRepository) DeleteRefreshToken(ctx context.Context, key string) error {
 	err := r.redis.Del(ctx, key).Err()
 	if err != nil {
-		r.log.Error().Err(err).Msg("")
+		r.log.Error(err)
 		return err
 	}
-	r.log.Info().Msgf("Deleted refresh token. Key: %s", key)
+	r.log.Infof("Deleted refresh token. Key: %s", key)
 
 	return nil
 }

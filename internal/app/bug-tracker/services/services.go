@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/rs/zerolog"
-
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/models"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/redis"
@@ -40,9 +38,9 @@ type Service struct {
 	Redis
 }
 
-func NewService(repo *repository.Repository, redisRepo redis.Redis, log *zerolog.Logger) *Service {
+func NewService(repo *repository.Repository, redisRepo redis.Redis) *Service {
 	return &Service{
-		Auth:  NewAuth(log),
+		Auth:  NewAuth(),
 		User:  NewUser(repo.User),
 		Redis: NewRedis(redisRepo),
 	}

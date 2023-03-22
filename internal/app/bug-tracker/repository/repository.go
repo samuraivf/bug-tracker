@@ -3,9 +3,8 @@ package repository
 import (
 	"database/sql"
 
-	"github.com/rs/zerolog"
-
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/models"
 )
 
@@ -20,7 +19,7 @@ type Repository struct {
 	User
 }
 
-func NewRepository(db *sql.DB, log *zerolog.Logger) *Repository {
+func NewRepository(db *sql.DB, log log.Log) *Repository {
 	return &Repository{
 		User: NewUserRepo(db, log),
 	}

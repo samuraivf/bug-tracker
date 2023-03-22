@@ -2,105 +2,58 @@ package handler
 
 import (
 	"context"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/redis"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/services"
 )
 
 func CreateServer() {
-	logger := zerolog.New(os.Stdout).Output(zerolog.ConsoleWriter{
-		Out:        os.Stderr,
-		TimeFormat: time.RFC3339,
-	}).With().Timestamp().Logger()
-
-	if err := initConfig(); err != nil {
-		logger.Fatal().Err(err).Msg("")
-	}
-
-	if err := godotenv.Load(); err != nil {
-		logger.Fatal().Err(err).Msg("")
-	}
-
+	logger := log.New()
 	e := echo.New()
 	e.Validator = newValidator()
 
-	config := &repository.PostgresConfig{
-		Host:     viper.GetString("db.host"),
-		Port:     viper.GetInt("db.port"),
-		User:     viper.GetString("db.user"),
-		Password: os.Getenv("POSTGRES_PASSWORD"),
-		DBName:   viper.GetString("db.name"),
-	}
+	dep, close := CreateDependencies(logger)
+	defer close()
 
-	db, err := repository.OpenPostgres(config)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("")
-	}
+	redisRepo := redis.NewRedis(dep.redis, logger)
+	repo := repository.NewRepository(dep.db, logger)
+	s := services.NewService(repo, redisRepo)
 
-	logger.Info().Msg("Open PostgreSQL db connection")
-	defer db.Close()
+	h := NewHandler(s, logger, dep.kafka)
 
-	redisConfig := &redis.Config{
-		Host: viper.GetString("redis.host"),
-		Port: viper.GetString("redis.port"),
-	}
-
-	redisClient, err := redis.NewClient(context.Background(), redisConfig)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("")
-	}
-	logger.Info().Msg("Redis started")
-
-	redisRepo := redis.NewRedis(redisClient, &logger)
-	repo := repository.NewRepository(db, &logger)
-	s := services.NewService(repo, redisRepo, &logger)
-	h := NewHandler(s, &logger)
-
-	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
-		LogURI:    true,
-		LogStatus: true,
-		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-			logger.Info().
-				Str("URI", v.URI).
-				Int("status", v.Status).
-				Msg("request")
-
-			return nil
-		},
-	}))
+	e.Use(Logger(logger))
 	e.Use(middleware.Recover())
+	e = setRoutes(e, h)
 
-	auth := e.Group(auth)
-	{
-		auth.POST(signUp, h.signUp)
-		auth.POST(signIn, h.signIn, h.isUnauthorized)
-		auth.GET(refresh, h.refresh)
-		auth.GET(logout, h.logout)
-	}
-
-	e.GET("/hello", func(c echo.Context) error {
-		data, err := getUserData(c)
-		if err != nil {
-			return c.String(404, err.Error())
+	go func() {
+		if err := e.Start(":" + viper.GetString("server-port")); err != nil && err != http.ErrServerClosed {
+			e.Logger.Fatal("shutting down the server")
 		}
-		KafkaProducer()
-		return c.String(200, data.Username)
-	}, h.isAuthorized)
+	}()
+	logger.Info("Server started")
 
-	e.Logger.Fatal(e.Start(":" + viper.GetString("server-port")))
-}
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-func initConfig() error {
-	viper.AddConfigPath("configs")
-	viper.SetConfigName("config")
-	return viper.ReadInConfig()
+	<-done
+	logger.Info("Server Stopped")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := e.Shutdown(ctx); err != nil {
+		e.Logger.Fatal(err)
+	}
+	logger.Info("Server Exited Properly")
 }

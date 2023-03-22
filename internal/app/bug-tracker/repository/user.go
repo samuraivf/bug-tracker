@@ -3,11 +3,10 @@ package repository
 import (
 	"database/sql"
 	"errors"
-
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+	
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/models"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log"
 )
 
 var (
@@ -16,10 +15,10 @@ var (
 
 type UserRepository struct {
 	db  *sql.DB
-	log *zerolog.Logger
+	log log.Log
 }
 
-func NewUserRepo(db *sql.DB, log *zerolog.Logger) *UserRepository {
+func NewUserRepo(db *sql.DB, log log.Log) *UserRepository {
 	return &UserRepository{db, log}
 }
 
@@ -30,13 +29,13 @@ func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
 	err := row.Scan(&user.ID, &user.Name, &user.Username, &user.Password, &user.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			r.log.Error().Err(err).Msg("")
+			r.log.Error(err)
 			return nil, ErrUserNotFound
 		}
-		r.log.Error().Err(err).Msg("")
+		r.log.Error(err)
 		return nil, err
 	}
-	r.log.Info().Msgf("Get user with email: %s", email)
+	r.log.Infof("Get user with email: %s", email)
 
 	return user, nil
 }
@@ -48,13 +47,13 @@ func (r *UserRepository) GetUserById(id uint64) (*models.User, error) {
 	err := row.Scan(&user.ID, &user.Name, &user.Username, &user.Password, &user.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			r.log.Error().Err(err).Msg("")
+			r.log.Error(err)
 			return nil, ErrUserNotFound
 		}
-		r.log.Error().Err(err).Msg("")
+		r.log.Error(err)
 		return nil, err
 	}
-	r.log.Info().Msgf("Get user with id: %d", id)
+	r.log.Infof("Get user with id: %d", id)
 
 	return user, nil
 }
@@ -66,13 +65,13 @@ func (r *UserRepository) GetUserByUsername(username string) (*models.User, error
 	err := row.Scan(&user.ID, &user.Name, &user.Username, &user.Password, &user.Email)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			r.log.Error().Err(err).Msg("")
+			r.log.Error(err)
 			return nil, ErrUserNotFound
 		}
-		r.log.Error().Err(err).Msg("")
+		r.log.Error(err)
 		return nil, err
 	}
-	r.log.Info().Msgf("Get user with username: %s", username)
+	r.log.Infof("Get user with username: %s", username)
 
 	return user, nil
 }
@@ -88,10 +87,10 @@ func (r *UserRepository) CreateUser(userData *dto.SignUpDto) (uint64, error) {
 
 	var userID uint64
 	if err := result.Scan(&userID); err != nil {
-		log.Error().Err(err).Msg("")
+		r.log.Error(err)
 		return 0, err
 	}
-	log.Info().Msgf("Create user: id = %d", userID)
+	r.log.Infof("Create user: id = %d", userID)
 
 	return uint64(userID), nil
 }

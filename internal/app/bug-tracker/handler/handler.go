@@ -6,31 +6,33 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/rs/zerolog"
 
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/kafka"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/services"
 )
 
 type Handler struct {
 	service *services.Service
-	log     *zerolog.Logger
+	log     log.Log
+	kafka   kafka.Kafka
 }
 
-func NewHandler(s *services.Service, log *zerolog.Logger) *Handler {
-	return &Handler{s, log}
+func NewHandler(s *services.Service, log log.Log, kafkaWriter kafka.Kafka) *Handler {
+	return &Handler{s, log, kafkaWriter}
 }
 
 func (h *Handler) signUp(c echo.Context) error {
 	userData := new(dto.SignUpDto)
 
 	if err := c.Bind(userData); err != nil {
-		h.log.Error().Err(err).Msg("")
+		h.log.Error(err)
 		return c.JSON(http.StatusBadRequest, newErrorMessage(err.Error()))
 	}
 
 	if err := c.Validate(userData); err != nil {
-		h.log.Error().Err(err).Msg("")
+		h.log.Error(err)
 		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidSignUpData.Error()))
 	}
 
@@ -54,18 +56,18 @@ func (h *Handler) signIn(c echo.Context) error {
 	userData := new(dto.SignInDto)
 
 	if err := c.Bind(userData); err != nil {
-		h.log.Error().Err(err).Msg("")
+		h.log.Error(err)
 		return c.JSON(http.StatusBadRequest, newErrorMessage(err.Error()))
 	}
 
 	if err := c.Validate(userData); err != nil {
-		h.log.Error().Err(err).Msg("")
+		h.log.Error(err)
 		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidSignInData.Error()))
 	}
 
 	user, err := h.service.User.ValidateUser(userData.Email, userData.Password)
 	if err != nil {
-		h.log.Error().Err(err).Msg("")
+		h.log.Error(err)
 		c.JSON(http.StatusBadRequest, newErrorMessage(err.Error()))
 	}
 
@@ -127,20 +129,20 @@ func (h *Handler) logout(c echo.Context) error {
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
 	})
-	
+
 	return c.JSON(http.StatusOK, nil)
 }
 
 func (h *Handler) createTokens(c echo.Context, username string, userID uint64) error {
 	accessToken, err := h.service.Auth.GenerateAccessToken(username, userID)
 	if err != nil {
-		h.log.Error().Err(err).Msg("")
+		h.log.Error(err)
 		return c.JSON(http.StatusInternalServerError, newErrorMessage(err.Error()))
 	}
 
 	refreshTokenData, err := h.service.Auth.GenerateRefreshToken(username, userID)
 	if err != nil {
-		h.log.Error().Err(err).Msg("")
+		h.log.Error(err)
 		return c.JSON(http.StatusInternalServerError, newErrorMessage(err.Error()))
 	}
 
