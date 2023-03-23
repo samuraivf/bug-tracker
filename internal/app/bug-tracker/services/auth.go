@@ -20,7 +20,7 @@ var (
 	errTokenClaimsInvalidType = errors.New("error token claims are not of type *TokenClaims")
 )
 
-type AuthService struct {}
+type AuthService struct{}
 
 type TokenData struct {
 	TokenID  string `json:"tokenId"`
@@ -70,7 +70,7 @@ func (s *AuthService) GenerateRefreshToken(username string, userID uint64) (*Ref
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 		TokenData{
-			TokenID: tokenID,
+			TokenID:  tokenID,
 			Username: username,
 			UserID:   userID,
 		},

@@ -6,10 +6,11 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog/log"
-	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/redis"
-	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository"
 	kafkago "github.com/segmentio/kafka-go"
 	"github.com/spf13/viper"
+	
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/redis"
 )
 
 func initConfig() error {
@@ -47,8 +48,8 @@ func RedisConfig() *redis.Config {
 
 func KafkaConfig() kafkago.WriterConfig {
 	return kafkago.WriterConfig{
-		Brokers: []string{viper.GetString("kafka.brokers")},
-		Topic:   viper.GetString("kafka.topic"),
+		Brokers:      []string{viper.GetString("kafka.brokers")},
+		Topic:        viper.GetString("kafka.topic"),
 		BatchTimeout: 1 * time.Millisecond,
 	}
 }

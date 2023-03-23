@@ -21,7 +21,7 @@ type Kafka interface {
 func NewKafkaWriter(config kafkago.WriterConfig, log log.Log) *KafkaWriter {
 	return &KafkaWriter{
 		writer: kafkago.NewWriter(config),
-		log: log,
+		log:    log,
 	}
 }
 

@@ -9,12 +9,12 @@ import (
 	"github.com/samuraivf/bug-tracker/configs"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/kafka"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log"
-	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/redis"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository"
 )
 
 type Dependencies struct {
-	db *sql.DB
+	db    *sql.DB
 	redis *redisgo.Client
 	kafka *kafka.KafkaWriter
 }
