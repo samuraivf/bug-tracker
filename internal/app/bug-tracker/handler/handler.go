@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
@@ -42,6 +43,17 @@ func (h *Handler) signUp(c echo.Context) error {
 
 	if _, err := h.service.User.GetUserByUsername(userData.Email); err == nil {
 		return c.JSON(http.StatusBadRequest, newErrorMessage(errUserUsernameAlreadyExists.Error()))
+	}
+
+	link := uuid.NewString()
+	// Message: <email>:<link>
+	message := fmt.Sprintf("%s:%s", userData.Email, link)
+	err := h.kafka.Write(message)
+	if err == nil {
+		h.log.Infof("[Kafka] Sent message: %s", message)
+	} else {
+		h.log.Error(err)
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(errInternalServerError.Error()))
 	}
 
 	id, err := h.service.User.CreateUser(userData)
