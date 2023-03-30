@@ -8,9 +8,9 @@ import (
 	"github.com/rs/zerolog/log"
 	kafkago "github.com/segmentio/kafka-go"
 	"github.com/spf13/viper"
-	
-	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository"
+
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/redis"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository"
 )
 
 func initConfig() error {

@@ -15,4 +15,5 @@ var (
 	errTokenIsEmpty              = errors.New("error token is empty")
 	errUserNotFound              = errors.New("error user is not found")
 	errUserDataInvalidType       = errors.New("error user data is of invalid type")
+	errEmailIsNotVerified        = errors.New("error email is not verified")
 )

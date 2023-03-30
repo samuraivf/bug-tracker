@@ -38,7 +38,7 @@ type TokenClaims struct {
 	TokenData
 }
 
-func NewAuth() *AuthService {
+func NewAuth() Auth {
 	return &AuthService{}
 }
 

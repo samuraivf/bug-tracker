@@ -11,6 +11,8 @@ func setRoutes(e *echo.Echo, h *Handler) *echo.Echo {
 		auth.POST(signIn, h.signIn, h.isUnauthorized)
 		auth.GET(refresh, h.refresh)
 		auth.GET(logout, h.logout)
+		auth.POST(verify, h.verifyEmail)
+		auth.POST(setEmail, h.setEmail)
 	}
 
 	return e

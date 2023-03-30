@@ -45,15 +45,9 @@ func (h *Handler) signUp(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, newErrorMessage(errUserUsernameAlreadyExists.Error()))
 	}
 
-	link := uuid.NewString()
-	// Message: <email>:<link>
-	message := fmt.Sprintf("%s:%s", userData.Email, link)
-	err := h.kafka.Write(message)
-	if err == nil {
-		h.log.Infof("[Kafka] Sent message: %s", message)
-	} else {
-		h.log.Error(err)
-		return c.JSON(http.StatusInternalServerError, newErrorMessage(errInternalServerError.Error()))
+	_, err := h.service.Redis.Get(c.Request().Context(), userData.Email)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errEmailIsNotVerified.Error()))
 	}
 
 	id, err := h.service.User.CreateUser(userData)
@@ -62,6 +56,44 @@ func (h *Handler) signUp(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, id)
+}
+
+func (h *Handler) verifyEmail(c echo.Context) error {
+	verifyEmail := new(dto.VerifyEmail)
+
+	if err := c.Bind(verifyEmail); err != nil {
+		h.log.Error(err)
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err.Error()))
+	}
+
+	link := uuid.NewString()
+	// Message: <email>:<link>
+	message := fmt.Sprintf("%s:%s", verifyEmail.Email, link)
+	err := h.kafka.Write(message)
+	if err == nil {
+		h.log.Infof("[Kafka] Sent message: %s", message)
+	} else {
+		h.log.Error(err)
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(errInternalServerError.Error()))
+	}
+
+	return c.JSON(http.StatusOK, nil)
+}
+
+func (h *Handler) setEmail(c echo.Context) error {
+	verifyEmail := new(dto.VerifyEmail)
+
+	if err := c.Bind(verifyEmail); err != nil {
+		h.log.Error(err)
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err.Error()))
+	}
+
+	err := h.service.Redis.Set(c.Request().Context(), verifyEmail.Email, "verified", time.Minute*10)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(errInternalServerError.Error()))
+	}
+
+	return c.JSON(http.StatusOK, nil)
 }
 
 func (h *Handler) signIn(c echo.Context) error {
@@ -94,7 +126,6 @@ func (h *Handler) refresh(c echo.Context) error {
 	}
 
 	refreshTokenData, err := h.service.Auth.ParseRefreshToken(refreshToken.Value)
-
 	if err != nil {
 		c.SetCookie(&http.Cookie{
 			Name:     "refreshToken",
@@ -107,7 +138,6 @@ func (h *Handler) refresh(c echo.Context) error {
 
 	key := fmt.Sprintf("%s:%s", refreshTokenData.Username, refreshTokenData.TokenID)
 	_, err = h.service.Redis.GetRefreshToken(c.Request().Context(), key)
-
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, newErrorMessage(errTokenDoesNotExist.Error()))
 	}

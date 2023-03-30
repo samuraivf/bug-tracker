@@ -27,6 +27,8 @@ type User interface {
 }
 
 type Redis interface {
+	Set(ctx context.Context, key, val string, exp time.Duration) error
+	Get(ctx context.Context, key string) (string, error)
 	SetRefreshToken(ctx context.Context, key, refreshToken string) error
 	GetRefreshToken(ctx context.Context, key string) (string, error)
 	DeleteRefreshToken(ctx context.Context, key string) error

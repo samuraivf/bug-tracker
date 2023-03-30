@@ -12,6 +12,8 @@ import (
 )
 
 type Redis interface {
+	Set(ctx context.Context, key, val string, exp time.Duration) error
+	Get(ctx context.Context, key string) (string, error)
 	SetRefreshToken(ctx context.Context, key, refreshToken string, TTL time.Duration) error
 	GetRefreshToken(ctx context.Context, key string) (string, error)
 	DeleteRefreshToken(ctx context.Context, key string) error
@@ -44,12 +46,24 @@ func NewRedis(client *redis.Client, log log.Log) Redis {
 	}
 }
 
-func (r *RedisRepository) getUserRefreshTokens(ctx context.Context, pattern string) ([]string, error) {
-	return r.redis.Keys(ctx, pattern).Result()
+func (r *RedisRepository) Set(ctx context.Context, key, val string, exp time.Duration) error {
+	err := r.redis.Set(ctx, key, val, exp).Err()
+	if err != nil {
+		r.log.Error(err)
+		return err
+	}
+	r.log.Infof("[Redis] Set %s:%s", key, val)
+
+	return nil
 }
 
-func (r *RedisRepository) deleteUserRefreshTokens(ctx context.Context, keys []string) error {
-	return r.redis.Del(ctx, keys...).Err()
+func (r *RedisRepository) Get(ctx context.Context, key string) (string, error) {
+	val, err := r.redis.Get(ctx, key).Result()
+	if err != nil {
+		r.log.Error(err)
+		return "", err
+	}
+	return val, nil
 }
 
 func (r *RedisRepository) SetRefreshToken(ctx context.Context, key, refreshToken string, TTL time.Duration) error {
@@ -75,6 +89,14 @@ func (r *RedisRepository) SetRefreshToken(ctx context.Context, key, refreshToken
 	r.log.Infof("Set refresh token. Key: %s", key)
 
 	return nil
+}
+
+func (r *RedisRepository) getUserRefreshTokens(ctx context.Context, pattern string) ([]string, error) {
+	return r.redis.Keys(ctx, pattern).Result()
+}
+
+func (r *RedisRepository) deleteUserRefreshTokens(ctx context.Context, keys []string) error {
+	return r.redis.Del(ctx, keys...).Err()
 }
 
 func (r *RedisRepository) GetRefreshToken(ctx context.Context, key string) (string, error) {
