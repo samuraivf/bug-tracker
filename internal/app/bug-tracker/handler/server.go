@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/spf13/viper"
@@ -21,7 +22,8 @@ import (
 func CreateServer() {
 	logger := log.New()
 	e := echo.New()
-	e.Validator = newValidator()
+	validator := validator.New()
+	e.Validator = newValidator(validator)
 
 	dep, close := CreateDependencies(logger)
 	defer close()

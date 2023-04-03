@@ -19,7 +19,7 @@ func initConfig() error {
 	return viper.ReadInConfig()
 }
 
-func init() {
+func Init() {
 	if err := initConfig(); err != nil {
 		log.Fatal().Timestamp().Err(err).Msg("")
 	}

@@ -28,7 +28,7 @@ func (h *Handler) signUp(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, newErrorMessage(errUserEmailAlreadyExists))
 	}
 
-	if _, err := h.service.User.GetUserByUsername(userData.Email); err == nil {
+	if _, err := h.service.User.GetUserByUsername(userData.Username); err == nil {
 		return c.JSON(http.StatusBadRequest, newErrorMessage(errUserUsernameAlreadyExists))
 	}
 

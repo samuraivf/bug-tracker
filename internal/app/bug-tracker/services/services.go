@@ -10,6 +10,8 @@ import (
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository"
 )
 
+//go:generate mockgen -source=services.go -destination=mocks/services.go
+
 type Auth interface {
 	GetRefreshTokenTTL() time.Duration
 	GenerateAccessToken(username string, userID uint64) (string, error)

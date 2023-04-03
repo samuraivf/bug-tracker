@@ -7,6 +7,8 @@ import (
 	"github.com/rs/zerolog"
 )
 
+//go:generate mockgen -source=logger.go -destination=mocks/logger.go
+
 type Log interface {
 	Info(msg string)
 	Infof(msg string, v ...interface{})
@@ -35,7 +37,7 @@ func (l *Logger) Info(msg string) {
 }
 
 func (l *Logger) Infof(msg string, v ...interface{}) {
-	l.log.Info().Msgf(msg, v)
+	l.log.Info().Msgf(msg, v...)
 }
 
 func (l *Logger) Error(err error) {

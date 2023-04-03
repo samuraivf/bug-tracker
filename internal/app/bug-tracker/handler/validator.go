@@ -1,13 +1,16 @@
 package handler
 
-import "github.com/go-playground/validator/v10"
-
-type CustomValidator struct {
-	validator *validator.Validate
+//go:generate mockgen -source=validator.go -destination=mocks/validator.go
+type Validator interface {
+	Struct(s interface{}) error
 }
 
-func newValidator() *CustomValidator {
-	return &CustomValidator{validator: validator.New()}
+type CustomValidator struct {
+	validator Validator
+}
+
+func newValidator(validator Validator) *CustomValidator {
+	return &CustomValidator{validator}
 }
 
 func (cv *CustomValidator) Validate(i interface{}) error {
