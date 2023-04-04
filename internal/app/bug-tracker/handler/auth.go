@@ -16,9 +16,8 @@ func (h *Handler) signUp(c echo.Context) error {
 
 	if err := c.Bind(userData); err != nil {
 		h.log.Error(err)
-		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidJSON))
 	}
-
 	if err := c.Validate(userData); err != nil {
 		h.log.Error(err)
 		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidSignUpData))

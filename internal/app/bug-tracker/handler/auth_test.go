@@ -66,6 +66,62 @@ func TestSignUp(t *testing.T) {
 	req.Close = true
 
 	require.NoError(t, handler.signUp(echoCtx))
-	require.Equal(t, rec.Result().StatusCode, http.StatusOK)
-	require.Equal(t, rec.Body.String(), "1\n")
+	require.Equal(t, http.StatusOK, rec.Result().StatusCode)
+	require.Equal(t, "1\n", rec.Body.String())
+}
+
+func TestSignUpError(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, userData *dto.SignUpDto) *Handler
+
+	tests := []struct{
+		name string
+		mockBehaviour mockBehaviour
+		userData *dto.SignUpDto
+		userDataJSON string
+		expectedStatusCode int
+		expectedReturnBody string
+	}{
+		{
+			name: "Error invalid json",
+			mockBehaviour: func(c *gomock.Controller, userData *dto.SignUpDto) *Handler {
+				log := mock_log.NewMockLog(c)
+
+				log.EXPECT().Error(gomock.Any()).Return()
+
+				return &Handler{nil, log, nil}
+			},
+			userData: nil,
+			userDataJSON: `{"invalid"}`,
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errInvalidJSON.Error() + `"}` + "\n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			handler := test.mockBehaviour(c, test.userData)
+
+			e := echo.New()
+			defer e.Close()
+
+			validator := validator.New()
+			e.Validator = newValidator(validator)
+			e.POST(signUp, handler.signUp)
+
+			req := httptest.NewRequest(http.MethodPost, signUp, strings.NewReader(test.userDataJSON))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			echoCtx := e.NewContext(req, rec)
+
+			defer rec.Result().Body.Close()
+			req.Close = true
+
+			require.NoError(t, handler.signUp(echoCtx))
+			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
+			require.Equal(t, test.expectedReturnBody, rec.Body.String())
+		})
+	}
 }

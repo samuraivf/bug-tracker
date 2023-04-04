@@ -3,6 +3,7 @@ package handler
 import "errors"
 
 var (
+	errInvalidJSON               = errors.New("error invalid json")
 	errInvalidSignUpData         = errors.New("error invalid sign up data")
 	errInvalidSignInData         = errors.New("error invalid sign in data")
 	errUserEmailAlreadyExists    = errors.New("error user with such an email already exists")
