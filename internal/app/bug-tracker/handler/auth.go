@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
@@ -49,12 +48,10 @@ func (h *Handler) verifyEmail(c echo.Context) error {
 
 	if err := c.Bind(verifyEmail); err != nil {
 		h.log.Error(err)
-		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidJSON))
 	}
 
-	link := uuid.NewString()
-	// Message: <email>:<link>
-	message := fmt.Sprintf("%s:%s", verifyEmail.Email, link)
+	message := verifyEmail.Email
 	err := h.kafka.Write(message)
 	if err == nil {
 		h.log.Infof("[Kafka] Sent message: %s", message)

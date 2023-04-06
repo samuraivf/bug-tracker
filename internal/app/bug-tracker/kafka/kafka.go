@@ -13,6 +13,8 @@ type KafkaWriter struct {
 	log    log.Log
 }
 
+//go:generate mockgen -source=kafka.go -destination=mocks/kafka.go
+
 type Kafka interface {
 	Close() error
 	Write(message string) error

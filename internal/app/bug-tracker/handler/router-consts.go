@@ -7,5 +7,5 @@ const (
 	logout   = "/logout"
 	refresh  = "/refresh"
 	verify   = "/verify-email"
-	setEmail = "/set-email/:link"
+	setEmail = "/set-email"
 )
