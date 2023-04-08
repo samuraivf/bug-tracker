@@ -10,6 +10,8 @@ import (
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
 )
 
+type createTokensType func(c echo.Context, username string, userID uint64) error
+
 func (h *Handler) signUp(c echo.Context) error {
 	userData := new(dto.SignUpDto)
 
@@ -68,7 +70,7 @@ func (h *Handler) setEmail(c echo.Context) error {
 
 	if err := c.Bind(verifyEmail); err != nil {
 		h.log.Error(err)
-		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidJSON))
 	}
 
 	err := h.service.Redis.Set(c.Request().Context(), verifyEmail.Email, "verified", time.Minute*10)
@@ -79,12 +81,12 @@ func (h *Handler) setEmail(c echo.Context) error {
 	return c.JSON(http.StatusOK, nil)
 }
 
-func (h *Handler) signIn(c echo.Context) error {
+func (h *Handler) signIn(c echo.Context, createTokens createTokensType) error {
 	userData := new(dto.SignInDto)
 
 	if err := c.Bind(userData); err != nil {
 		h.log.Error(err)
-		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidJSON))
 	}
 
 	if err := c.Validate(userData); err != nil {
@@ -95,13 +97,13 @@ func (h *Handler) signIn(c echo.Context) error {
 	user, err := h.service.User.ValidateUser(userData.Email, userData.Password)
 	if err != nil {
 		h.log.Error(err)
-		c.JSON(http.StatusBadRequest, newErrorMessage(err))
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
 	}
 
-	return h.createTokens(c, user.Username, user.ID)
+	return createTokens(c, user.Username, user.ID)
 }
 
-func (h *Handler) refresh(c echo.Context) error {
+func (h *Handler) refresh(c echo.Context, createTokens createTokensType) error {
 	refreshToken, err := c.Cookie("refreshToken")
 
 	if err != nil || refreshToken == nil {
@@ -125,7 +127,7 @@ func (h *Handler) refresh(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, newErrorMessage(errTokenDoesNotExist))
 	}
 
-	return h.createTokens(c, refreshTokenData.Username, refreshTokenData.UserID)
+	return createTokens(c, refreshTokenData.Username, refreshTokenData.UserID)
 }
 
 func (h *Handler) logout(c echo.Context) error {
