@@ -118,7 +118,7 @@ func (h *Handler) refresh(c echo.Context, createTokens createTokensType) error {
 			Expires:  time.Unix(0, 0),
 			HttpOnly: true,
 		})
-		return c.JSON(http.StatusUnauthorized, err)
+		return c.JSON(http.StatusUnauthorized, newErrorMessage(err))
 	}
 
 	key := fmt.Sprintf("%s:%s", refreshTokenData.Username, refreshTokenData.TokenID)
