@@ -545,7 +545,7 @@ func TestRefresh(t *testing.T) {
 				HttpOnly: true,
 			},
 			expectedStatusCode: http.StatusUnauthorized,
-			expectedReturnBody: `{"message":"error"}` + "\n",
+			expectedReturnBody: `{"message":"` + errInvalidRefreshToken.Error() + `"}` + "\n",
 		},
 		{
 			name: "Error in redis",
@@ -638,6 +638,265 @@ func TestRefresh(t *testing.T) {
 			require.NoError(t, handler.refresh(echoCtx, func(c echo.Context, username string, userID uint64) error {
 				return c.JSON(http.StatusOK, nil)
 			}))
+			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
+			require.Equal(t, test.expectedReturnBody, rec.Body.String())
+		})
+	}
+}
+
+func TestLogout(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, refreshToken string) *Handler
+
+	tests := []struct {
+		name               string
+		mockBehaviour      mockBehaviour
+		refreshToken       string
+		refreshTokenCookie *http.Cookie
+		expectedStatusCode int
+		expectedReturnBody string
+	}{
+		{
+			name: "No refresh token",
+			mockBehaviour: func(c *gomock.Controller, refreshToken string) *Handler {
+				return &Handler{nil, nil, nil}
+			},
+			refreshToken:       "",
+			refreshTokenCookie: &http.Cookie{},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errInvalidRefreshToken.Error() + `"}` + "\n",
+		},
+		{
+			name: "Invalid refresh token",
+			mockBehaviour: func(c *gomock.Controller, refreshToken string) *Handler {
+				auth := mock_services.NewMockAuth(c)
+
+				auth.EXPECT().ParseRefreshToken(refreshToken).Return(nil, errors.New("error"))
+
+				return &Handler{&services.Service{Auth: auth}, nil, nil}
+			},
+			refreshToken: "token",
+			refreshTokenCookie: &http.Cookie{
+				Name:     "refreshToken",
+				Value:    "token",
+				Expires:  time.Now().Add(time.Minute * 10),
+				HttpOnly: true,
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errInvalidRefreshToken.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error in redis",
+			mockBehaviour: func(c *gomock.Controller, refreshToken string) *Handler {
+				auth := mock_services.NewMockAuth(c)
+				redis := mock_services.NewMockRedis(c)
+				ctx := context.Background()
+
+				tokenData := &services.TokenData{
+					TokenID:  "id",
+					Username: "username",
+					UserID:   1,
+				}
+				key := fmt.Sprintf("%s:%s", tokenData.Username, tokenData.TokenID)
+
+				auth.EXPECT().ParseRefreshToken(refreshToken).Return(tokenData, nil)
+				redis.EXPECT().DeleteRefreshToken(ctx, key).Return(errors.New("error"))
+
+				return &Handler{&services.Service{Auth: auth, Redis: redis}, nil, nil}
+			},
+			refreshToken: "token",
+			refreshTokenCookie: &http.Cookie{
+				Name:     "refreshToken",
+				Value:    "token",
+				Expires:  time.Now().Add(time.Minute * 10),
+				HttpOnly: true,
+			},
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedReturnBody: `{"message":"error"}` + "\n",
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, refreshToken string) *Handler {
+				auth := mock_services.NewMockAuth(c)
+				redis := mock_services.NewMockRedis(c)
+				ctx := context.Background()
+
+				tokenData := &services.TokenData{
+					TokenID:  "id",
+					Username: "username",
+					UserID:   1,
+				}
+				key := fmt.Sprintf("%s:%s", tokenData.Username, tokenData.TokenID)
+
+				auth.EXPECT().ParseRefreshToken(refreshToken).Return(tokenData, nil)
+				redis.EXPECT().DeleteRefreshToken(ctx, key).Return(nil)
+
+				return &Handler{&services.Service{Auth: auth, Redis: redis}, nil, nil}
+			},
+			refreshToken: "token",
+			refreshTokenCookie: &http.Cookie{
+				Name:     "refreshToken",
+				Value:    "token",
+				Expires:  time.Now().Add(time.Minute * 10),
+				HttpOnly: true,
+			},
+			expectedStatusCode: http.StatusOK,
+			expectedReturnBody: "null" + "\n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			handler := test.mockBehaviour(c, test.refreshToken)
+
+			e := echo.New()
+			defer e.Close()
+
+			validator := validator.New()
+			e.Validator = newValidator(validator)
+			e.GET(refresh, handler.logout)
+
+			req := httptest.NewRequest(http.MethodGet, logout, nil)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+			req.AddCookie(test.refreshTokenCookie)
+			rec := httptest.NewRecorder()
+			echoCtx := e.NewContext(req, rec)
+
+			defer rec.Result().Body.Close()
+			req.Close = true
+
+			require.NoError(t, handler.logout(echoCtx))
+			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
+			require.Equal(t, test.expectedReturnBody, rec.Body.String())
+		})
+	}
+}
+
+func TestCreateTokens(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, username string, userID uint64) *Handler
+
+	tests := []struct {
+		name               string
+		mockBehaviour      mockBehaviour
+		username           string
+		userID             uint64
+		expectedStatusCode int
+		expectedReturnBody string
+	}{
+		{
+			name: "Error in auth GenerateAccessToken",
+			mockBehaviour: func(c *gomock.Controller, username string, userID uint64) *Handler {
+				auth := mock_services.NewMockAuth(c)
+				log := mock_log.NewMockLog(c)
+
+				auth.EXPECT().GenerateAccessToken(username, userID).Return("", errors.New("error"))
+				log.EXPECT().Error(gomock.Any()).Return()
+
+				return &Handler{&services.Service{Auth: auth}, log, nil}
+			},
+			username: "username",
+			userID: uint64(1),
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedReturnBody: `{"message":"error"}` + "\n",
+		},
+		{
+			name: "Error in auth GenerateRefreshToken",
+			mockBehaviour: func(c *gomock.Controller, username string, userID uint64) *Handler {
+				auth := mock_services.NewMockAuth(c)
+				log := mock_log.NewMockLog(c)
+
+				auth.EXPECT().GenerateAccessToken(username, userID).Return("token", nil)
+				auth.EXPECT().GenerateRefreshToken(username, userID).Return(&services.RefreshTokenData{}, errors.New("error"))
+				log.EXPECT().Error(gomock.Any()).Return()
+
+				return &Handler{&services.Service{Auth: auth}, log, nil}
+			},
+			username: "username",
+			userID: uint64(1),
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedReturnBody: `{"message":"error"}` + "\n",
+		},
+		{
+			name: "Error in redis SetRefreshToken",
+			mockBehaviour: func(c *gomock.Controller, username string, userID uint64) *Handler {
+				auth := mock_services.NewMockAuth(c)
+				redis := mock_services.NewMockRedis(c)
+				log := mock_log.NewMockLog(c)
+
+				refreshTokenData := &services.RefreshTokenData{
+					ID: "id",
+					RefreshToken: "token",
+				}
+
+				auth.EXPECT().GenerateAccessToken(username, userID).Return("token", nil)
+				auth.EXPECT().GenerateRefreshToken(username, userID).Return(refreshTokenData, nil)
+
+				key := fmt.Sprintf("%s:%s", username, refreshTokenData.ID)
+				redis.EXPECT().SetRefreshToken(context.Background(), key, refreshTokenData.RefreshToken).Return(errors.New("error"))
+
+				return &Handler{&services.Service{Auth: auth, Redis: redis}, log, nil}
+			},
+			username: "username",
+			userID: uint64(1),
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedReturnBody: `{"message":"error"}` + "\n",
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, username string, userID uint64) *Handler {
+				auth := mock_services.NewMockAuth(c)
+				redis := mock_services.NewMockRedis(c)
+				log := mock_log.NewMockLog(c)
+
+				refreshTokenData := &services.RefreshTokenData{
+					ID: "id",
+					RefreshToken: "token",
+				}
+
+				auth.EXPECT().GenerateAccessToken(username, userID).Return("token", nil)
+				auth.EXPECT().GenerateRefreshToken(username, userID).Return(refreshTokenData, nil)
+
+				key := fmt.Sprintf("%s:%s", username, refreshTokenData.ID)
+				redis.EXPECT().SetRefreshToken(context.Background(), key, refreshTokenData.RefreshToken).Return(nil)
+				auth.EXPECT().GetRefreshTokenTTL().Return(time.Minute)
+
+				return &Handler{&services.Service{Auth: auth, Redis: redis}, log, nil}
+			},
+			username: "username",
+			userID: uint64(1),
+			expectedStatusCode: http.StatusOK,
+			expectedReturnBody: `{"accessToken":"token"}` + "\n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			handler := test.mockBehaviour(c, test.username, test.userID)
+
+			e := echo.New()
+			defer e.Close()
+
+			validator := validator.New()
+			e.Validator = newValidator(validator)
+			e.GET("/", func(c echo.Context) error {
+				return handler.createTokens(c, test.username, test.userID)
+			})
+
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			echoCtx := e.NewContext(req, rec)
+
+			defer rec.Result().Body.Close()
+			req.Close = true
+
+			require.NoError(t, handler.createTokens(echoCtx, test.username, test.userID))
 			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
 			require.Equal(t, test.expectedReturnBody, rec.Body.String())
 		})

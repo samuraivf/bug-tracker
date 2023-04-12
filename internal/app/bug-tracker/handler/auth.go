@@ -118,7 +118,7 @@ func (h *Handler) refresh(c echo.Context, createTokens createTokensType) error {
 			Expires:  time.Unix(0, 0),
 			HttpOnly: true,
 		})
-		return c.JSON(http.StatusUnauthorized, newErrorMessage(err))
+		return c.JSON(http.StatusUnauthorized, newErrorMessage(errInvalidRefreshToken))
 	}
 
 	key := fmt.Sprintf("%s:%s", refreshTokenData.Username, refreshTokenData.TokenID)
@@ -180,18 +180,14 @@ func (h *Handler) createTokens(c echo.Context, username string, userID uint64) e
 		return c.JSON(http.StatusInternalServerError, newErrorMessage(err))
 	}
 
-	h.setRefreshToken(c, refreshTokenData.RefreshToken)
+	c.SetCookie(&http.Cookie{
+		Name:     "refreshToken",
+		Value:    refreshTokenData.RefreshToken,
+		Expires:  time.Now().Add(h.service.Auth.GetRefreshTokenTTL()),
+		HttpOnly: true,
+	})
 
 	return c.JSON(http.StatusOK, map[string]string{
 		"accessToken": accessToken,
-	})
-}
-
-func (h *Handler) setRefreshToken(c echo.Context, val string) {
-	c.SetCookie(&http.Cookie{
-		Name:     "refreshToken",
-		Value:    val,
-		Expires:  time.Now().Add(h.service.Auth.GetRefreshTokenTTL()),
-		HttpOnly: true,
 	})
 }
