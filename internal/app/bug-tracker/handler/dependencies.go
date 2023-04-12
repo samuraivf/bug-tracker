@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 
-	redisgo "github.com/redis/go-redis/v9"
-
 	"github.com/samuraivf/bug-tracker/configs"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/kafka"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log"
@@ -15,33 +13,44 @@ import (
 
 type Dependencies struct {
 	db    *sql.DB
-	redis *redisgo.Client
-	kafka *kafka.KafkaWriter
+	redis redis.Redis
+	kafka kafka.Kafka
 }
 
-func CreateDependencies(logger log.Log) (*Dependencies, func()) {
-	db, err := repository.OpenPostgres(configs.PostgresConfig())
+var (
+	openPostgres   = repository.OpenPostgres
+	newRedisClient = redis.NewClient
+	newRedis       = redis.NewRedis
+	newKafkaWriter = kafka.NewKafkaWriter
+)
+
+func createDependencies(logger log.Log) (*Dependencies, func()) {
+	db, err := openPostgres(configs.PostgresConfig())
 	if err != nil {
 		logger.Fatal(err)
+		return nil, func() {}
 	}
 	logger.Info("Open PostgreSQL db connection")
 
-	redisClient, err := redis.NewClient(context.Background(), configs.RedisConfig())
+	redisClient, err := newRedisClient(context.Background(), configs.RedisConfig())
 	if err != nil {
 		logger.Fatal(err)
+		return nil, func() {}
 	}
-	defer redisClient.Conn().Close()
+	logger.Info("Redis started")
 
-	k := kafka.NewKafkaWriter(configs.KafkaConfig(), logger)
+	redisRepo := newRedis(redisClient, logger)
+
+	k := newKafkaWriter(configs.KafkaConfig(), logger)
 	logger.Info("Kafka started")
 
-	return &Dependencies{db: db, redis: redisClient, kafka: k}, func() {
+	return &Dependencies{db: db, redis: redisRepo, kafka: k}, func() {
 		if err := db.Close(); err != nil {
 			logger.Error(err)
 		}
 		logger.Info("PostgreSQL connection closed")
 
-		if err := redisClient.Conn().Close(); err != nil {
+		if err := redisRepo.Close(); err != nil {
 			logger.Error(err)
 		}
 		logger.Info("Redis connection closed")

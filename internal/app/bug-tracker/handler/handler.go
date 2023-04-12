@@ -15,5 +15,3 @@ type Handler struct {
 func NewHandler(s *services.Service, log log.Log, kafkaWriter kafka.Kafka) *Handler {
 	return &Handler{s, log, kafkaWriter}
 }
-
-

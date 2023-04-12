@@ -797,8 +797,8 @@ func TestCreateTokens(t *testing.T) {
 
 				return &Handler{&services.Service{Auth: auth}, log, nil}
 			},
-			username: "username",
-			userID: uint64(1),
+			username:           "username",
+			userID:             uint64(1),
 			expectedStatusCode: http.StatusInternalServerError,
 			expectedReturnBody: `{"message":"error"}` + "\n",
 		},
@@ -814,8 +814,8 @@ func TestCreateTokens(t *testing.T) {
 
 				return &Handler{&services.Service{Auth: auth}, log, nil}
 			},
-			username: "username",
-			userID: uint64(1),
+			username:           "username",
+			userID:             uint64(1),
 			expectedStatusCode: http.StatusInternalServerError,
 			expectedReturnBody: `{"message":"error"}` + "\n",
 		},
@@ -827,7 +827,7 @@ func TestCreateTokens(t *testing.T) {
 				log := mock_log.NewMockLog(c)
 
 				refreshTokenData := &services.RefreshTokenData{
-					ID: "id",
+					ID:           "id",
 					RefreshToken: "token",
 				}
 
@@ -839,8 +839,8 @@ func TestCreateTokens(t *testing.T) {
 
 				return &Handler{&services.Service{Auth: auth, Redis: redis}, log, nil}
 			},
-			username: "username",
-			userID: uint64(1),
+			username:           "username",
+			userID:             uint64(1),
 			expectedStatusCode: http.StatusInternalServerError,
 			expectedReturnBody: `{"message":"error"}` + "\n",
 		},
@@ -852,7 +852,7 @@ func TestCreateTokens(t *testing.T) {
 				log := mock_log.NewMockLog(c)
 
 				refreshTokenData := &services.RefreshTokenData{
-					ID: "id",
+					ID:           "id",
 					RefreshToken: "token",
 				}
 
@@ -865,8 +865,8 @@ func TestCreateTokens(t *testing.T) {
 
 				return &Handler{&services.Service{Auth: auth, Redis: redis}, log, nil}
 			},
-			username: "username",
-			userID: uint64(1),
+			username:           "username",
+			userID:             uint64(1),
 			expectedStatusCode: http.StatusOK,
 			expectedReturnBody: `{"accessToken":"token"}` + "\n",
 		},

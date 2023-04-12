@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log"
-	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/redis"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/services"
 )
@@ -25,12 +24,11 @@ func CreateServer() {
 	validator := validator.New()
 	e.Validator = newValidator(validator)
 
-	dep, close := CreateDependencies(logger)
+	dep, close := createDependencies(logger)
 	defer close()
 
-	redisRepo := redis.NewRedis(dep.redis, logger)
 	repo := repository.NewRepository(dep.db, logger)
-	s := services.NewService(repo, redisRepo)
+	s := services.NewService(repo, dep.redis)
 
 	h := NewHandler(s, logger, dep.kafka)
 

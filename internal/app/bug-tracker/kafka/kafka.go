@@ -20,7 +20,7 @@ type Kafka interface {
 	Write(message string) error
 }
 
-func NewKafkaWriter(config kafkago.WriterConfig, log log.Log) *KafkaWriter {
+func NewKafkaWriter(config kafkago.WriterConfig, log log.Log) Kafka {
 	return &KafkaWriter{
 		writer: kafkago.NewWriter(config),
 		log:    log,

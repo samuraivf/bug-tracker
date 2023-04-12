@@ -11,12 +11,15 @@ import (
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log"
 )
 
+//go:generate mockgen -source=redis.go -destination=mocks/redis.go
+
 type Redis interface {
 	Set(ctx context.Context, key, val string, exp time.Duration) error
 	Get(ctx context.Context, key string) (string, error)
 	SetRefreshToken(ctx context.Context, key, refreshToken string, TTL time.Duration) error
 	GetRefreshToken(ctx context.Context, key string) (string, error)
 	DeleteRefreshToken(ctx context.Context, key string) error
+	Close() error
 }
 
 type RedisRepository struct {
@@ -118,4 +121,8 @@ func (r *RedisRepository) DeleteRefreshToken(ctx context.Context, key string) er
 	r.log.Infof("Deleted refresh token. Key: %s", key)
 
 	return nil
+}
+
+func (r *RedisRepository) Close() error {
+	return r.redis.Conn().Close()
 }

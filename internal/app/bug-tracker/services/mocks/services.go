@@ -233,6 +233,20 @@ func (m *MockRedis) EXPECT() *MockRedisMockRecorder {
 	return m.recorder
 }
 
+// Close mocks base method.
+func (m *MockRedis) Close() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close.
+func (mr *MockRedisMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockRedis)(nil).Close))
+}
+
 // DeleteRefreshToken mocks base method.
 func (m *MockRedis) DeleteRefreshToken(ctx context.Context, key string) error {
 	m.ctrl.T.Helper()

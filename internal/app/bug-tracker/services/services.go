@@ -34,6 +34,7 @@ type Redis interface {
 	SetRefreshToken(ctx context.Context, key, refreshToken string) error
 	GetRefreshToken(ctx context.Context, key string) (string, error)
 	DeleteRefreshToken(ctx context.Context, key string) error
+	Close() error
 }
 
 type Service struct {

@@ -34,3 +34,7 @@ func (s *RedisService) GetRefreshToken(ctx context.Context, key string) (string,
 func (s *RedisService) DeleteRefreshToken(ctx context.Context, key string) error {
 	return s.repo.DeleteRefreshToken(ctx, key)
 }
+
+func (s *RedisService) Close() error {
+	return s.repo.Close()
+}
