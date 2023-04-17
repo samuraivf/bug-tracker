@@ -11,7 +11,7 @@ import (
 	"github.com/golang/mock/gomock"
 	redisgo "github.com/redis/go-redis/v9"
 	kafkago "github.com/segmentio/kafka-go"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/kafka"
 	mock_kafka "github.com/samuraivf/bug-tracker/internal/app/bug-tracker/kafka/mocks"
@@ -176,9 +176,9 @@ func Test_createDependencies(t *testing.T) {
 			close()
 
 			if test.name == "OK" {
-				assert.NotNil(t, dp.db)
-				assert.NotNil(t, dp.kafka)
-				assert.NotNil(t, dp.redis)
+				require.NotNil(t, dp.db)
+				require.NotNil(t, dp.kafka)
+				require.NotNil(t, dp.redis)
 			}
 		})
 	}

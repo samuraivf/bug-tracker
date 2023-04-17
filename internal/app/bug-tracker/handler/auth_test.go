@@ -23,7 +23,7 @@ import (
 	mock_services "github.com/samuraivf/bug-tracker/internal/app/bug-tracker/services/mocks"
 )
 
-func TestSignUp(t *testing.T) {
+func Test_signUp(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, userData *dto.SignUpDto) *Handler
 
 	tests := []struct {
@@ -213,7 +213,7 @@ func TestSignUp(t *testing.T) {
 	}
 }
 
-func TestVerifyEmail(t *testing.T) {
+func Test_verifyEmail(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, verifyEmail *dto.VerifyEmail) *Handler
 
 	tests := []struct {
@@ -301,7 +301,7 @@ func TestVerifyEmail(t *testing.T) {
 	}
 }
 
-func TestSetEmail(t *testing.T) {
+func Test_setEmail(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, verifyEmail *dto.VerifyEmail) *Handler
 
 	tests := []struct {
@@ -388,7 +388,7 @@ func TestSetEmail(t *testing.T) {
 	}
 }
 
-func TestSignIn(t *testing.T) {
+func Test_signIn(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, userData *dto.SignInDto) *Handler
 
 	tests := []struct {
@@ -507,7 +507,7 @@ func TestSignIn(t *testing.T) {
 	}
 }
 
-func TestRefresh(t *testing.T) {
+func Test_refresh(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, refreshToken string) *Handler
 
 	tests := []struct {
@@ -644,7 +644,7 @@ func TestRefresh(t *testing.T) {
 	}
 }
 
-func TestLogout(t *testing.T) {
+func Test_logout(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, refreshToken string) *Handler
 
 	tests := []struct {
@@ -775,7 +775,7 @@ func TestLogout(t *testing.T) {
 	}
 }
 
-func TestCreateTokens(t *testing.T) {
+func Test_createTokens(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, username string, userID uint64) *Handler
 
 	tests := []struct {

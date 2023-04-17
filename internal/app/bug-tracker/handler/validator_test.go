@@ -10,14 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewValidator(t *testing.T) {
+func Test_newValidator(t *testing.T) {
 	validator := validator.New()
 	customValidator := newValidator(validator)
 
 	require.Equal(t, &CustomValidator{validator}, customValidator)
 }
 
-func TestValidate(t *testing.T) {
+func Test_Validate(t *testing.T) {
 	c := gomock.NewController(t)
 	defer c.Finish()
 
@@ -29,7 +29,7 @@ func TestValidate(t *testing.T) {
 	require.NoError(t, customValidator.Validate(s))
 }
 
-func TestValidateError(t *testing.T) {
+func Test_ValidateError(t *testing.T) {
 	c := gomock.NewController(t)
 	defer c.Finish()
 

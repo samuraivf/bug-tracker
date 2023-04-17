@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewErrorMessage(t *testing.T) {
+func Test_newErrorMessage(t *testing.T) {
 	str := "error something went wrong"
 	msg := newErrorMessage(errors.New(str))
 
