@@ -1,6 +1,7 @@
 package log
 
 import (
+	"io"
 	"os"
 	"time"
 
@@ -21,9 +22,9 @@ type Logger struct {
 	log *zerolog.Logger
 }
 
-func New() *Logger {
+func New(out io.Writer) *Logger {
 	logger := zerolog.New(os.Stdout).Output(zerolog.ConsoleWriter{
-		Out:        os.Stderr,
+		Out:        out,
 		TimeFormat: time.RFC3339,
 	}).With().Timestamp().Logger()
 

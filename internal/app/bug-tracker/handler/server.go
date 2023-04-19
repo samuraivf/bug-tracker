@@ -19,7 +19,7 @@ import (
 )
 
 func CreateServer() {
-	logger := log.New()
+	logger := log.New(os.Stderr)
 	e := echo.New()
 	validator := validator.New()
 	e.Validator = newValidator(validator)
