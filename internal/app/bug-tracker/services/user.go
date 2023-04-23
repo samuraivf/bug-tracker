@@ -3,10 +3,11 @@ package services
 import (
 	"errors"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/models"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var (

@@ -22,7 +22,7 @@ func Test_Logger(t *testing.T) {
 	log := mock_log.NewMockLog(c)
 
 	middlewareFunc := Logger(log)
-	
+
 	e := echo.New()
 	e.Use(middlewareFunc)
 
@@ -30,22 +30,22 @@ func Test_Logger(t *testing.T) {
 }
 
 func Test_isUnauthorized(t *testing.T) {
-	tests := []struct{
-		name string
+	tests := []struct {
+		name                string
 		authorizationHeader bool
-		refreshTokenCookie *http.Cookie
-		expectedStatusCode int
-		expectedReturnBody string
+		refreshTokenCookie  *http.Cookie
+		expectedStatusCode  int
+		expectedReturnBody  string
 	}{
 		{
-			name: "Authorization Header exists",
+			name:                "Authorization Header exists",
 			authorizationHeader: true,
-			refreshTokenCookie: &http.Cookie{},
-			expectedStatusCode: http.StatusBadRequest,
-			expectedReturnBody: `{"message":"` + errUserIsAuthorized.Error() + `"}` + "\n",
+			refreshTokenCookie:  &http.Cookie{},
+			expectedStatusCode:  http.StatusBadRequest,
+			expectedReturnBody:  `{"message":"` + errUserIsAuthorized.Error() + `"}` + "\n",
 		},
 		{
-			name: "Refresh token exists",
+			name:                "Refresh token exists",
 			authorizationHeader: false,
 			refreshTokenCookie: &http.Cookie{
 				Name:     "refreshToken",
@@ -57,11 +57,11 @@ func Test_isUnauthorized(t *testing.T) {
 			expectedReturnBody: `{"message":"` + errUserIsAuthorized.Error() + `"}` + "\n",
 		},
 		{
-			name: "OK",
+			name:                "OK",
 			authorizationHeader: false,
-			refreshTokenCookie: &http.Cookie{},
-			expectedStatusCode: http.StatusOK,
-			expectedReturnBody: `null` + "\n",
+			refreshTokenCookie:  &http.Cookie{},
+			expectedStatusCode:  http.StatusOK,
+			expectedReturnBody:  `null` + "\n",
 		},
 	}
 
@@ -72,7 +72,7 @@ func Test_isUnauthorized(t *testing.T) {
 			middleware := h.isUnauthorized(func(c echo.Context) error {
 				return c.JSON(http.StatusOK, nil)
 			})
-		
+
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			req.AddCookie(test.refreshTokenCookie)
@@ -83,10 +83,10 @@ func Test_isUnauthorized(t *testing.T) {
 
 			rec := httptest.NewRecorder()
 			echoCtx := e.NewContext(req, rec)
-		
+
 			defer rec.Result().Body.Close()
 			req.Close = true
-		
+
 			require.NoError(t, middleware(echoCtx))
 			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
 			require.Equal(t, test.expectedReturnBody, rec.Body.String())
@@ -97,16 +97,16 @@ func Test_isUnauthorized(t *testing.T) {
 func Test_isAuthorized(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, token string) *Handler
 
-	tests := []struct{
-		name string
+	tests := []struct {
+		name                string
 		authorizationHeader bool
-		mockBehaviour mockBehaviour
-		token string
-		expectedStatusCode int
-		expectedReturnBody string
+		mockBehaviour       mockBehaviour
+		token               string
+		expectedStatusCode  int
+		expectedReturnBody  string
 	}{
 		{
-			name: "No Authorization Header",
+			name:                "No Authorization Header",
 			authorizationHeader: false,
 			mockBehaviour: func(c *gomock.Controller, token string) *Handler {
 				return &Handler{}
@@ -115,47 +115,47 @@ func Test_isAuthorized(t *testing.T) {
 			expectedReturnBody: `{"message":"` + errInvalidAuthHeader.Error() + `"}` + "\n",
 		},
 		{
-			name: "Invalid Authorization header [Not Bearer]",
+			name:                "Invalid Authorization header [Not Bearer]",
 			authorizationHeader: true,
 			mockBehaviour: func(c *gomock.Controller, token string) *Handler {
 				return &Handler{}
 			},
-			token: "Berer token",
+			token:              "Berer token",
 			expectedStatusCode: http.StatusUnauthorized,
 			expectedReturnBody: `{"message":"` + errInvalidAuthHeader.Error() + `"}` + "\n",
 		},
 		{
-			name: "Invalid Authorization header [Parts Length<2]",
+			name:                "Invalid Authorization header [Parts Length<2]",
 			authorizationHeader: true,
 			mockBehaviour: func(c *gomock.Controller, token string) *Handler {
 				return &Handler{}
 			},
-			token: "Bearer",
+			token:              "Bearer",
 			expectedStatusCode: http.StatusUnauthorized,
 			expectedReturnBody: `{"message":"` + errInvalidAuthHeader.Error() + `"}` + "\n",
 		},
 		{
-			name: "Invalid Authorization header [Parts Length>2]",
+			name:                "Invalid Authorization header [Parts Length>2]",
 			authorizationHeader: true,
 			mockBehaviour: func(c *gomock.Controller, token string) *Handler {
 				return &Handler{}
 			},
-			token: "Bearer token token",
+			token:              "Bearer token token",
 			expectedStatusCode: http.StatusUnauthorized,
 			expectedReturnBody: `{"message":"` + errInvalidAuthHeader.Error() + `"}` + "\n",
 		},
 		{
-			name: "Invalid Authorization header [Parts[1] Length == 0]",
+			name:                "Invalid Authorization header [Parts[1] Length == 0]",
 			authorizationHeader: true,
 			mockBehaviour: func(c *gomock.Controller, token string) *Handler {
 				return &Handler{}
 			},
-			token: "Bearer ",
+			token:              "Bearer ",
 			expectedStatusCode: http.StatusUnauthorized,
 			expectedReturnBody: `{"message":"` + errTokenIsEmpty.Error() + `"}` + "\n",
 		},
 		{
-			name: "Error in ParseAccessToken",
+			name:                "Error in ParseAccessToken",
 			authorizationHeader: true,
 			mockBehaviour: func(c *gomock.Controller, token string) *Handler {
 				auth := mock_services.NewMockAuth(c)
@@ -163,15 +163,15 @@ func Test_isAuthorized(t *testing.T) {
 				headerParts := strings.Split(token, " ")
 
 				auth.EXPECT().ParseAccessToken(headerParts[1]).Return(nil, errors.New("error"))
-				
+
 				return &Handler{service: &services.Service{Auth: auth}}
 			},
-			token: "Bearer token",
+			token:              "Bearer token",
 			expectedStatusCode: http.StatusUnauthorized,
 			expectedReturnBody: `{"message":"error"}` + "\n",
 		},
 		{
-			name: "OK",
+			name:                "OK",
 			authorizationHeader: true,
 			mockBehaviour: func(c *gomock.Controller, token string) *Handler {
 				auth := mock_services.NewMockAuth(c)
@@ -179,10 +179,10 @@ func Test_isAuthorized(t *testing.T) {
 				headerParts := strings.Split(token, " ")
 
 				auth.EXPECT().ParseAccessToken(headerParts[1]).Return(&services.TokenData{}, nil)
-				
+
 				return &Handler{service: &services.Service{Auth: auth}}
 			},
-			token: "Bearer token",
+			token:              "Bearer token",
 			expectedStatusCode: http.StatusOK,
 			expectedReturnBody: "null" + "\n",
 		},
@@ -209,10 +209,10 @@ func Test_isAuthorized(t *testing.T) {
 
 			rec := httptest.NewRecorder()
 			echoCtx := e.NewContext(req, rec)
-		
+
 			defer rec.Result().Body.Close()
 			req.Close = true
-		
+
 			require.NoError(t, middleware(echoCtx))
 			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
 			require.Equal(t, test.expectedReturnBody, rec.Body.String())
@@ -221,34 +221,34 @@ func Test_isAuthorized(t *testing.T) {
 }
 
 func Test_getUserData(t *testing.T) {
-	tests := []struct{
-		name string
-		userData interface{}
+	tests := []struct {
+		name             string
+		userData         interface{}
 		expectedUserData *services.TokenData
-		expectedError error
+		expectedError    error
 	}{
 		{
-			name: "No userData",
-			userData: nil,
+			name:             "No userData",
+			userData:         nil,
 			expectedUserData: nil,
-			expectedError: errUserNotFound,
+			expectedError:    errUserNotFound,
 		},
 		{
-			name: "UserData invalid type",
-			userData: "userData",
+			name:             "UserData invalid type",
+			userData:         "userData",
 			expectedUserData: nil,
-			expectedError: errUserDataInvalidType,
+			expectedError:    errUserDataInvalidType,
 		},
 		{
 			name: "OK",
 			userData: &services.TokenData{
-				TokenID: "id",
-				UserID: uint64(1),
+				TokenID:  "id",
+				UserID:   uint64(1),
 				Username: "username",
 			},
 			expectedUserData: &services.TokenData{
-				TokenID: "id",
-				UserID: uint64(1),
+				TokenID:  "id",
+				UserID:   uint64(1),
 				Username: "username",
 			},
 			expectedError: nil,

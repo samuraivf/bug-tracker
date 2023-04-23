@@ -3,12 +3,12 @@ package handler
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/require"
 
-	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/services"
 	mock_kafka "github.com/samuraivf/bug-tracker/internal/app/bug-tracker/kafka/mocks"
 	mock_log "github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log/mocks"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/services"
 	mock_services "github.com/samuraivf/bug-tracker/internal/app/bug-tracker/services/mocks"
 )
 
@@ -25,7 +25,7 @@ func Test_newHandler(t *testing.T) {
 
 	require.Equal(t, &Handler{
 		service: &services.Service{Auth: auth},
-		log: log,
-		kafka: kafka,
+		log:     log,
+		kafka:   kafka,
 	}, handler)
 }

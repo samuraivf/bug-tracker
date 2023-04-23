@@ -6,8 +6,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/mock/gomock"
-	mock_handler "github.com/samuraivf/bug-tracker/internal/app/bug-tracker/handler/mocks"
 	"github.com/stretchr/testify/require"
+
+	mock_handler "github.com/samuraivf/bug-tracker/internal/app/bug-tracker/handler/mocks"
 )
 
 func Test_newValidator(t *testing.T) {
