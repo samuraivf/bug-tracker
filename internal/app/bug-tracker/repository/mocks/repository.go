@@ -94,3 +94,41 @@ func (mr *MockUserMockRecorder) GetUserByUsername(username interface{}) *gomock.
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByUsername", reflect.TypeOf((*MockUser)(nil).GetUserByUsername), username)
 }
+
+// MockProject is a mock of Project interface.
+type MockProject struct {
+	ctrl     *gomock.Controller
+	recorder *MockProjectMockRecorder
+}
+
+// MockProjectMockRecorder is the mock recorder for MockProject.
+type MockProjectMockRecorder struct {
+	mock *MockProject
+}
+
+// NewMockProject creates a new mock instance.
+func NewMockProject(ctrl *gomock.Controller) *MockProject {
+	mock := &MockProject{ctrl: ctrl}
+	mock.recorder = &MockProjectMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockProject) EXPECT() *MockProjectMockRecorder {
+	return m.recorder
+}
+
+// CreateProject mocks base method.
+func (m *MockProject) CreateProject(projectData *dto.CreateProjectDto) (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateProject", projectData)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateProject indicates an expected call of CreateProject.
+func (mr *MockProjectMockRecorder) CreateProject(projectData interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateProject", reflect.TypeOf((*MockProject)(nil).CreateProject), projectData)
+}

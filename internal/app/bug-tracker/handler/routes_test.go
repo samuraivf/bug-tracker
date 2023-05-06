@@ -27,6 +27,11 @@ func Test_setRoutes(t *testing.T) {
 		auth.POST(setEmail, h.setEmail)
 	}
 
+	project := e1.Group(project)
+	{
+		project.POST(create, h.createProject)
+	}
+
 	e2 = setRoutes(e2, h)
 
 	e1Routes := e1.Routes()

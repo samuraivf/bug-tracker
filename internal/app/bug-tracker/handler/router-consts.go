@@ -8,4 +8,7 @@ const (
 	refresh  = "/refresh"
 	verify   = "/verify-email"
 	setEmail = "/set-email"
+
+	project = "/project"
+	create  = "/create"
 )

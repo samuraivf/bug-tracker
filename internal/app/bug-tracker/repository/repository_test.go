@@ -6,7 +6,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
-	
+
 	mock_log "github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log/mocks"
 )
 
@@ -16,7 +16,7 @@ func Test_NewRepository(t *testing.T) {
 	defer c.Finish()
 
 	log := mock_log.NewMockLog(c)
-	expectedRepo := &Repository{User: NewUserRepo(db, log)}
+	expectedRepo := &Repository{User: NewUserRepo(db, log), Project: NewProjectRepo(db, log)}
 	repo := NewRepository(db, log)
 
 	require.Equal(t, expectedRepo, repo)

@@ -19,5 +19,10 @@ func setRoutes(e *echo.Echo, h *Handler) *echo.Echo {
 		auth.POST(setEmail, h.setEmail)
 	}
 
+	project := e.Group(project)
+	{
+		project.POST(create, h.createProject)
+	}
+
 	return e
 }

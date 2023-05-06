@@ -265,10 +265,10 @@ func Test_CreateUser(t *testing.T) {
 		{
 			name: "Error",
 			data: &dto.SignUpDto{
-				Name: "name",
+				Name:     "name",
 				Username: "username",
 				Password: "password",
-				Email: "email",
+				Email:    "email",
 			},
 			mockBehaviour: func(c *gomock.Controller, data *dto.SignUpDto) *UserRepository {
 				log := mock_log.NewMockLog(c)
@@ -282,15 +282,15 @@ func Test_CreateUser(t *testing.T) {
 				return &UserRepository{db: db, log: log}
 			},
 			expectedResult: 0,
-			expectedError: err,
+			expectedError:  err,
 		},
 		{
 			name: "OK",
 			data: &dto.SignUpDto{
-				Name: "name",
+				Name:     "name",
 				Username: "username",
 				Password: "password",
-				Email: "email",
+				Email:    "email",
 			},
 			mockBehaviour: func(c *gomock.Controller, data *dto.SignUpDto) *UserRepository {
 				log := mock_log.NewMockLog(c)
@@ -306,7 +306,7 @@ func Test_CreateUser(t *testing.T) {
 				return &UserRepository{db: db, log: log}
 			},
 			expectedResult: 1,
-			expectedError: nil,
+			expectedError:  nil,
 		},
 	}
 

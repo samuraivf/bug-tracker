@@ -37,16 +37,22 @@ type Redis interface {
 	Close() error
 }
 
+type Project interface {
+	CreateProject(projectData *dto.CreateProjectDto) (uint64, error)
+}
+
 type Service struct {
 	Auth
 	User
 	Redis
+	Project
 }
 
 func NewService(repo *repository.Repository, redisRepo redis.Redis) *Service {
 	return &Service{
-		Auth:  NewAuth(),
-		User:  NewUser(repo.User),
-		Redis: NewRedis(redisRepo),
+		Auth:    NewAuth(),
+		User:    NewUser(repo.User),
+		Redis:   NewRedis(redisRepo),
+		Project: NewProject(repo.Project),
 	}
 }

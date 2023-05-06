@@ -17,12 +17,18 @@ type User interface {
 	CreateUser(userData *dto.SignUpDto) (uint64, error)
 }
 
+type Project interface {
+	CreateProject(projectData *dto.CreateProjectDto) (uint64, error)
+}
+
 type Repository struct {
 	User
+	Project
 }
 
 func NewRepository(db *sql.DB, log log.Log) *Repository {
 	return &Repository{
-		User: NewUserRepo(db, log),
+		User:    NewUserRepo(db, log),
+		Project: NewProjectRepo(db, log),
 	}
 }

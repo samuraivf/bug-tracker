@@ -18,7 +18,7 @@ type UserRepository struct {
 	log log.Log
 }
 
-func NewUserRepo(db *sql.DB, log log.Log) *UserRepository {
+func NewUserRepo(db *sql.DB, log log.Log) User {
 	return &UserRepository{db, log}
 }
 
@@ -92,5 +92,5 @@ func (r *UserRepository) CreateUser(userData *dto.SignUpDto) (uint64, error) {
 	}
 	r.log.Infof("Create user: id = %d", userID)
 
-	return uint64(userID), nil
+	return userID, nil
 }
