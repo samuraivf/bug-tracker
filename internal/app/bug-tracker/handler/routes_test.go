@@ -30,6 +30,7 @@ func Test_setRoutes(t *testing.T) {
 	project := e1.Group(project)
 	{
 		project.POST(create, h.createProject)
+		project.GET(id, h.getProjectById)
 	}
 
 	e2 = setRoutes(e2, h)

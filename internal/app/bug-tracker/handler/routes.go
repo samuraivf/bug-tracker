@@ -22,6 +22,7 @@ func setRoutes(e *echo.Echo, h *Handler) *echo.Echo {
 	project := e.Group(project)
 	{
 		project.POST(create, h.createProject)
+		project.GET(id, h.getProjectById)
 	}
 
 	return e

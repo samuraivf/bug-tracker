@@ -1,6 +1,8 @@
 package handler
 
 const (
+	id = "/:id"
+
 	auth     = "/auth"
 	signUp   = "/sign-up"
 	signIn   = "/sign-in"

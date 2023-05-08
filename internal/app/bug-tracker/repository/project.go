@@ -5,6 +5,7 @@ import (
 
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/models"
 )
 
 type ProjectRepository struct {
@@ -32,4 +33,17 @@ func (r *ProjectRepository) CreateProject(projectDto *dto.CreateProjectDto) (uin
 	r.log.Infof("Create project: id = %d", projectID)
 
 	return projectID, nil
+}
+
+func (r *ProjectRepository) GetProjectById(id uint64) (*models.Project, error) {
+	result := r.db.QueryRow("SELECT * FROM projects WHERE id = $1", id)
+
+	project := new(models.Project)
+	if err := result.Scan(&project.ID, &project.Name, &project.Description, &project.AdminID); err != nil {
+		r.log.Error(err)
+		return nil, err
+	}
+	r.log.Infof("Get project: id = %d", id)
+
+	return project, nil
 }

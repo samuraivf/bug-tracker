@@ -2,6 +2,7 @@ package services
 
 import (
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/models"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository"
 )
 
@@ -15,4 +16,8 @@ func NewProject(repo repository.Project) Project {
 
 func (s *ProjectService) CreateProject(projectData *dto.CreateProjectDto) (uint64, error) {
 	return s.repo.CreateProject(projectData)
+}
+
+func (s *ProjectService) GetProjectById(id uint64) (*models.Project, error) {
+	return s.repo.GetProjectById(id)
 }
