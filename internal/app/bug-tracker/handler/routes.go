@@ -19,10 +19,11 @@ func setRoutes(e *echo.Echo, h *Handler) *echo.Echo {
 		auth.POST(setEmail, h.setEmail)
 	}
 
-	project := e.Group(project)
+	project := e.Group(project, h.isAuthorized)
 	{
 		project.POST(create, h.createProject)
 		project.GET(id, h.getProjectById)
+		project.DELETE(id, h.deleteProject)
 	}
 
 	return e

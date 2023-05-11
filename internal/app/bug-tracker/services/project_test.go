@@ -124,3 +124,55 @@ func Test_GetProjectById(t *testing.T) {
 		})
 	}
 }
+
+func Test_DeleteProject(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, projectID, userID uint64) *ProjectService
+	err := errors.New("error")
+
+	tests := []struct {
+		name          string
+		mockBehaviour mockBehaviour
+		projectID     uint64
+		userID        uint64
+		expectedError error
+	}{
+		{
+			name: "Error",
+			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64) *ProjectService {
+				project := mock_repository.NewMockProject(c)
+
+				project.EXPECT().DeleteProject(projectID, userID).Return(err)
+
+				return &ProjectService{repo: repository.Repository{Project: project}}
+			},
+			projectID:     1,
+			userID:        1,
+			expectedError: err,
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64) *ProjectService {
+				project := mock_repository.NewMockProject(c)
+
+				project.EXPECT().DeleteProject(projectID, userID).Return(nil)
+
+				return &ProjectService{repo: repository.Repository{Project: project}}
+			},
+			projectID:     1,
+			userID:        1,
+			expectedError: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			service := test.mockBehaviour(c, test.projectID, test.userID)
+			err := service.DeleteProject(test.projectID, test.userID)
+
+			require.Equal(t, test.expectedError, err)
+		})
+	}
+}

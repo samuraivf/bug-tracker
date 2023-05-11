@@ -49,3 +49,26 @@ func (h *Handler) getProjectById(c echo.Context) error {
 
 	return c.JSON(http.StatusFound, project)
 }
+
+func (h *Handler) deleteProject(c echo.Context) error {
+	id := c.Param("id")
+	userData, err := getUserData(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	if id == "" {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errProjectNotFound))
+	}
+
+	uint64ID, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errProjectNotFound))
+	}
+
+	if err := h.service.Project.DeleteProject(uint64ID, userData.UserID); err != nil {
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(err))
+	}
+
+	return c.JSON(http.StatusOK, true)
+}

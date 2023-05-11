@@ -40,6 +40,7 @@ type Redis interface {
 type Project interface {
 	CreateProject(projectData *dto.CreateProjectDto) (uint64, error)
 	GetProjectById(id uint64) (*models.Project, error)
+	DeleteProject(projectID, userID uint64) error
 }
 
 type Service struct {

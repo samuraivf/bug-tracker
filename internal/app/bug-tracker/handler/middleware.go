@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -75,7 +76,7 @@ func (h *Handler) isAuthorized(next echo.HandlerFunc) echo.HandlerFunc {
 func getUserData(c echo.Context) (*services.TokenData, error) {
 	userData := c.Get(userDataCtx)
 
-	if userData == nil {
+	if userData == nil || reflect.ValueOf(userData).IsNil() {
 		return nil, errUserNotFound
 	}
 

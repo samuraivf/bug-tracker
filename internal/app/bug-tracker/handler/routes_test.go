@@ -27,10 +27,11 @@ func Test_setRoutes(t *testing.T) {
 		auth.POST(setEmail, h.setEmail)
 	}
 
-	project := e1.Group(project)
+	project := e1.Group(project, h.isAuthorized)
 	{
 		project.POST(create, h.createProject)
 		project.GET(id, h.getProjectById)
+		project.DELETE(id, h.deleteProject)
 	}
 
 	e2 = setRoutes(e2, h)

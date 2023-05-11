@@ -2,10 +2,15 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/models"
+)
+
+var (
+	ErrNoRights = errors.New("error no rights to do this operation")
 )
 
 type ProjectRepository struct {
@@ -46,4 +51,22 @@ func (r *ProjectRepository) GetProjectById(id uint64) (*models.Project, error) {
 	r.log.Infof("Get project: id = %d", id)
 
 	return project, nil
+}
+
+func (r *ProjectRepository) DeleteProject(projectID, userID uint64) error {
+	result := r.db.QueryRow("SELECT admin FROM projects WHERE id = $1", projectID)
+
+	var adminID uint64
+	if err := result.Scan(&adminID); err != nil {
+		r.log.Error(err)
+		return err
+	}
+
+	if userID != adminID {
+		return ErrNoRights
+	}
+
+	_, err := r.db.Exec("DELETE FROM projects WHERE id = $1", projectID)
+
+	return err
 }

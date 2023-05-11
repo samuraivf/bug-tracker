@@ -224,3 +224,125 @@ func Test_getProjectById(t *testing.T) {
 		})
 	}
 }
+
+func Test_deleteProject(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, projectID, userID uint64) *Handler
+	err := errors.New("error")
+
+	tests := []struct {
+		name               string
+		mockBehaviour      mockBehaviour
+		id                 uint64
+		userData           *services.TokenData
+		paramId            string
+		expectedStatusCode int
+		expectedReturnBody string
+	}{
+		{
+			name: "Error invalid user data",
+			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64) *Handler {
+				return &Handler{}
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errUserNotFound.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error empty param",
+			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64) *Handler {
+				return &Handler{}
+			},
+			userData: &services.TokenData{
+				UserID: 1,
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errProjectNotFound.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error invalid param",
+			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64) *Handler {
+				return &Handler{}
+			},
+			userData: &services.TokenData{
+				UserID: 1,
+			},
+			paramId:            "1b",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errProjectNotFound.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error cannot delete project",
+			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64) *Handler {
+				project := mock_services.NewMockProject(c)
+
+				project.EXPECT().DeleteProject(projectID, userID).Return(err)
+
+				serv := &services.Service{Project: project}
+
+				return &Handler{serv, nil, nil}
+			},
+			id: 1,
+			userData: &services.TokenData{
+				UserID: 1,
+			},
+			paramId:            "1",
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedReturnBody: `{"message":"` + err.Error() + `"}` + "\n",
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64) *Handler {
+				project := mock_services.NewMockProject(c)
+
+				project.EXPECT().DeleteProject(projectID, userID).Return(nil)
+
+				serv := &services.Service{Project: project}
+
+				return &Handler{serv, nil, nil}
+			},
+			id: 1,
+			userData: &services.TokenData{
+				UserID: 1,
+			},
+			paramId:            "1",
+			expectedStatusCode: http.StatusOK,
+			expectedReturnBody: `true` + "\n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			userID := uint64(0)
+			if test.userData != nil {
+				userID = test.userData.UserID
+			}
+
+			handler := test.mockBehaviour(c, test.id, userID)
+
+			e := echo.New()
+			defer e.Close()
+
+			validator := validator.New()
+			e.Validator = newValidator(validator)
+			e.DELETE(id, handler.deleteProject)
+
+			req := httptest.NewRequest(http.MethodDelete, "/", nil)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			echoCtx := e.NewContext(req, rec)
+			echoCtx.SetPath("/:id")
+			echoCtx.SetParamNames("id")
+			echoCtx.SetParamValues(test.paramId)
+			echoCtx.Set(userDataCtx, test.userData)
+
+			defer rec.Result().Body.Close()
+			req.Close = true
+
+			require.NoError(t, handler.deleteProject(echoCtx))
+			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
+			require.Equal(t, test.expectedReturnBody, rec.Body.String())
+		})
+	}
+}
