@@ -70,3 +70,25 @@ func (r *ProjectRepository) DeleteProject(projectID, userID uint64) error {
 
 	return err
 }
+
+func (r *ProjectRepository) UpdateProject(projectData *dto.UpdateProjectDto, userID uint64) error {
+	result := r.db.QueryRow("SELECT admin FROM projects WHERE id = $1", projectData.ProjectID)
+
+	var adminID uint64
+	if err := result.Scan(&adminID); err != nil {
+		r.log.Error(err)
+		return err
+	}
+
+	if userID != adminID {
+		return ErrNoRights
+	}
+
+	_, err := r.db.Exec(
+		"UPDATE projects SET description = $1 WHERE id = $2", 
+		projectData.Description, 
+		projectData.ProjectID,
+	)
+
+	return err
+}

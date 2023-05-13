@@ -176,3 +176,55 @@ func Test_DeleteProject(t *testing.T) {
 		})
 	}
 }
+
+func Test_UpdateProject(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, projectData *dto.UpdateProjectDto, userID uint64) *ProjectService
+	err := errors.New("error")
+
+	tests := []struct {
+		name          string
+		mockBehaviour mockBehaviour
+		projectData   *dto.UpdateProjectDto
+		userID        uint64
+		expectedError error
+	}{
+		{
+			name: "Error",
+			mockBehaviour: func(c *gomock.Controller, projectData *dto.UpdateProjectDto, userID uint64) *ProjectService {
+				project := mock_repository.NewMockProject(c)
+
+				project.EXPECT().UpdateProject(projectData, userID).Return(err)
+
+				return &ProjectService{repo: repository.Repository{Project: project}}
+			},
+			projectData: &dto.UpdateProjectDto{Description: "description"},
+			userID:        1,
+			expectedError: err,
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, projectData *dto.UpdateProjectDto, userID uint64) *ProjectService {
+				project := mock_repository.NewMockProject(c)
+
+				project.EXPECT().UpdateProject(projectData, userID).Return(nil)
+
+				return &ProjectService{repo: repository.Repository{Project: project}}
+			},
+			projectData: &dto.UpdateProjectDto{Description: "description"},
+			userID:        1,
+			expectedError: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			service := test.mockBehaviour(c, test.projectData, test.userID)
+			err := service.UpdateProject(test.projectData, test.userID)
+
+			require.Equal(t, test.expectedError, err)
+		})
+	}
+}

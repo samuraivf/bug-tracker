@@ -19,7 +19,7 @@ func (h *Handler) createProject(c echo.Context) error {
 
 	if err := c.Validate(projectData); err != nil {
 		h.log.Error(err)
-		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidCreateProjectData))
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidProjectData))
 	}
 
 	id, err := h.service.Project.CreateProject(projectData)
@@ -68,6 +68,26 @@ func (h *Handler) deleteProject(c echo.Context) error {
 
 	if err := h.service.Project.DeleteProject(uint64ID, userData.UserID); err != nil {
 		return c.JSON(http.StatusInternalServerError, newErrorMessage(err))
+	}
+
+	return c.JSON(http.StatusOK, true)
+}
+
+func (h *Handler) updateProject(c echo.Context) error {
+	projectData := new(dto.UpdateProjectDto)
+	userData, err := getUserData(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	if err := c.Bind(projectData); err != nil {
+		h.log.Error(err)
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidJSON))
+	}
+
+	err = h.service.Project.UpdateProject(projectData, userData.UserID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(errInternalServerError))
 	}
 
 	return c.JSON(http.StatusOK, true)

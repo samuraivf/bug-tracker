@@ -254,3 +254,105 @@ func Test_DeleteProject(t *testing.T) {
 		})
 	}
 }
+
+func Test_UpdateProject(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, projectData *dto.UpdateProjectDto, userID uint64) *ProjectRepository
+	err := errors.New("error")
+
+	tests := []struct {
+		name          string
+		projectData   *dto.UpdateProjectDto
+		userID        uint64
+		mockBehaviour mockBehaviour
+		expectedError error
+	}{
+		{
+			name:      "Error cannot get admin",
+			projectData: &dto.UpdateProjectDto{ProjectID: 1},
+			userID:    1,
+			mockBehaviour: func(c *gomock.Controller, projectData *dto.UpdateProjectDto, userID uint64) *ProjectRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+
+				mock.ExpectQuery(
+					regexp.QuoteMeta("SELECT admin FROM projects WHERE id = $1"),
+				).WithArgs(projectData.ProjectID).WillReturnError(err)
+				log.EXPECT().Error(err)
+
+				return &ProjectRepository{db: db, log: log}
+			},
+			expectedError: err,
+		},
+		{
+			name:      "Error no rights",
+			projectData: &dto.UpdateProjectDto{ProjectID: 1},
+			userID:    1,
+			mockBehaviour: func(c *gomock.Controller, projectData *dto.UpdateProjectDto, userID uint64) *ProjectRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+
+				rows := sqlmock.NewRows([]string{"admin"}).AddRow(uint64(2))
+				mock.ExpectQuery(
+					regexp.QuoteMeta("SELECT admin FROM projects WHERE id = $1"),
+				).WithArgs(projectData.ProjectID).WillReturnRows(rows)
+
+				return &ProjectRepository{db: db, log: log}
+			},
+			expectedError: ErrNoRights,
+		},
+		{
+			name:      "Error cannot update project",
+			projectData: &dto.UpdateProjectDto{ProjectID: 1},
+			userID:    1,
+			mockBehaviour: func(c *gomock.Controller, projectData *dto.UpdateProjectDto, userID uint64) *ProjectRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+
+				rows := sqlmock.NewRows([]string{"admin"}).AddRow(uint64(1))
+				mock.ExpectQuery(
+					regexp.QuoteMeta("SELECT admin FROM projects WHERE id = $1"),
+				).WithArgs(projectData.ProjectID).WillReturnRows(rows)
+
+				mock.ExpectExec(
+					regexp.QuoteMeta("UPDATE projects SET description = $1 WHERE id = $2"),
+				).WithArgs(projectData.Description, projectData.ProjectID).WillReturnError(err)
+
+				return &ProjectRepository{db: db, log: log}
+			},
+			expectedError: err,
+		},
+		{
+			name:      "OK",
+			projectData: &dto.UpdateProjectDto{ProjectID: 1},
+			userID:    1,
+			mockBehaviour: func(c *gomock.Controller, projectData *dto.UpdateProjectDto, userID uint64) *ProjectRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+
+				rows := sqlmock.NewRows([]string{"admin"}).AddRow(uint64(1))
+				mock.ExpectQuery(
+					regexp.QuoteMeta("SELECT admin FROM projects WHERE id = $1"),
+				).WithArgs(projectData.ProjectID).WillReturnRows(rows)
+
+				mock.ExpectExec(
+					regexp.QuoteMeta("UPDATE projects SET description = $1 WHERE id = $2"),
+				).WithArgs(projectData.Description, projectData.ProjectID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+				return &ProjectRepository{db: db, log: log}
+			},
+			expectedError: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			repo := test.mockBehaviour(c, test.projectData, test.userID)
+			err := repo.UpdateProject(test.projectData, test.userID)
+
+			require.Equal(t, test.expectedError, err)
+		})
+	}
+}

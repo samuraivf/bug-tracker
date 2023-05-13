@@ -18,6 +18,6 @@ var (
 	errUserDataInvalidType       = errors.New("error user data is of invalid type")
 	errEmailIsNotVerified        = errors.New("error email is not verified")
 
-	errInvalidCreateProjectData = errors.New("error invalid create project data")
+	errInvalidProjectData = errors.New("error invalid project data")
 	errProjectNotFound          = errors.New("error project is not found")
 )

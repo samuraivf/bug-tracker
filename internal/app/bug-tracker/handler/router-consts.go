@@ -13,4 +13,5 @@ const (
 
 	project = "/project"
 	create  = "/create"
+	update  = "/update"
 )

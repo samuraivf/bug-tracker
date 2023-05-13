@@ -385,3 +385,17 @@ func (mr *MockProjectMockRecorder) GetProjectById(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProjectById", reflect.TypeOf((*MockProject)(nil).GetProjectById), id)
 }
+
+// UpdateProject mocks base method.
+func (m *MockProject) UpdateProject(projectData *dto.UpdateProjectDto, userID uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateProject", projectData, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateProject indicates an expected call of UpdateProject.
+func (mr *MockProjectMockRecorder) UpdateProject(projectData, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProject", reflect.TypeOf((*MockProject)(nil).UpdateProject), projectData, userID)
+}

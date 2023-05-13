@@ -25,3 +25,7 @@ func (s *ProjectService) GetProjectById(id uint64) (*models.Project, error) {
 func (s *ProjectService) DeleteProject(projectID, userID uint64) error {
 	return s.repo.DeleteProject(projectID, userID)
 }
+
+func (s *ProjectService) UpdateProject(projectData *dto.UpdateProjectDto, userID uint64) error {
+	return s.repo.UpdateProject(projectData, userID)
+}

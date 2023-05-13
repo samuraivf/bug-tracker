@@ -76,7 +76,7 @@ func (h *Handler) isAuthorized(next echo.HandlerFunc) echo.HandlerFunc {
 func getUserData(c echo.Context) (*services.TokenData, error) {
 	userData := c.Get(userDataCtx)
 
-	if userData == nil || reflect.ValueOf(userData).IsNil() {
+	if userData == nil || (reflect.ValueOf(userData).Kind() == reflect.Ptr && reflect.ValueOf(userData).IsNil()) {
 		return nil, errUserNotFound
 	}
 

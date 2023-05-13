@@ -57,7 +57,7 @@ func Test_createProject(t *testing.T) {
 			projectData:        nil,
 			projectDataJSON:    `{"name": "N"}`,
 			expectedStatusCode: http.StatusBadRequest,
-			expectedReturnBody: `{"message":"` + errInvalidCreateProjectData.Error() + `"}` + "\n",
+			expectedReturnBody: `{"message":"` + errInvalidProjectData.Error() + `"}` + "\n",
 		},
 		{
 			name: "Error cannot create project",
@@ -341,6 +341,116 @@ func Test_deleteProject(t *testing.T) {
 			req.Close = true
 
 			require.NoError(t, handler.deleteProject(echoCtx))
+			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
+			require.Equal(t, test.expectedReturnBody, rec.Body.String())
+		})
+	}
+}
+
+func Test_updateProject(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, projectData *dto.UpdateProjectDto, userID uint64) *Handler
+	err := errors.New("error")
+
+	tests := []struct {
+		name               string
+		mockBehaviour      mockBehaviour
+		projectData        *dto.UpdateProjectDto
+		projectDataJSON    string
+		userData           *services.TokenData
+		expectedStatusCode int
+		expectedReturnBody string
+	}{
+		{
+			name: "Error invalid user data",
+			mockBehaviour: func(c *gomock.Controller, projectData *dto.UpdateProjectDto, userID uint64) *Handler {
+				return &Handler{}
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errUserNotFound.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error invalid JSON",
+			mockBehaviour: func(c *gomock.Controller, projectData *dto.UpdateProjectDto, userID uint64) *Handler {
+				log := mock_log.NewMockLog(c)
+
+				log.EXPECT().Error(gomock.Any()).Return()
+
+				return &Handler{log: log}
+			},
+			userData: &services.TokenData{UserID: 1},
+			projectDataJSON: "{invalid}",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errInvalidJSON.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error cannot update project",
+			mockBehaviour: func(c *gomock.Controller, projectData *dto.UpdateProjectDto, userID uint64) *Handler {
+				project := mock_services.NewMockProject(c)
+
+				project.EXPECT().UpdateProject(projectData, userID).Return(err)
+
+				serv := &services.Service{Project: project}
+
+				return &Handler{serv, nil, nil}
+			},
+			projectData: &dto.UpdateProjectDto{Description: "description", ProjectID: 1},
+			projectDataJSON: `{"projectId": 1, "description": "description"}`,
+			userData: &services.TokenData{
+				UserID: 1,
+			},
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedReturnBody: `{"message":"` + errInternalServerError.Error() + `"}` + "\n",
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, projectData *dto.UpdateProjectDto, userID uint64) *Handler {
+				project := mock_services.NewMockProject(c)
+
+				project.EXPECT().UpdateProject(projectData, userID).Return(nil)
+
+				serv := &services.Service{Project: project}
+
+				return &Handler{serv, nil, nil}
+			},
+			projectData: &dto.UpdateProjectDto{Description: "description", ProjectID: 1},
+			projectDataJSON: `{"projectId": 1, "description": "description"}`,
+			userData: &services.TokenData{
+				UserID: 1,
+			},
+			expectedStatusCode: http.StatusOK,
+			expectedReturnBody: `true` + "\n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			userID := uint64(0)
+			if test.userData != nil {
+				userID = test.userData.UserID
+			}
+
+			handler := test.mockBehaviour(c, test.projectData, userID)
+
+			e := echo.New()
+			defer e.Close()
+
+			validator := validator.New()
+			e.Validator = newValidator(validator)
+			e.PUT(id, handler.updateProject)
+
+			req := httptest.NewRequest(http.MethodDelete, update, strings.NewReader(test.projectDataJSON))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			echoCtx := e.NewContext(req, rec)
+			echoCtx.Set(userDataCtx, test.userData)
+
+			defer rec.Result().Body.Close()
+			req.Close = true
+
+			require.NoError(t, handler.updateProject(echoCtx))
 			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
 			require.Equal(t, test.expectedReturnBody, rec.Body.String())
 		})
