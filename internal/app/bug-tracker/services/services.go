@@ -42,6 +42,7 @@ type Project interface {
 	GetProjectById(id uint64) (*models.Project, error)
 	DeleteProject(projectID, userID uint64) error
 	UpdateProject(projectData *dto.UpdateProjectDto, userID uint64) error
+	AddMember(memberData *dto.AddMemberDto, userID uint64) error
 }
 
 type Service struct {

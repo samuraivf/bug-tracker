@@ -11,7 +11,8 @@ const (
 	verify   = "/verify-email"
 	setEmail = "/set-email"
 
-	project = "/project"
-	create  = "/create"
-	update  = "/update"
+	project   = "/project"
+	create    = "/create"
+	update    = "/update"
+	addMember = "/add-member"
 )

@@ -16,10 +16,15 @@ var (
 type ProjectRepository struct {
 	db  *sql.DB
 	log log.Log
+	admin admin
 }
 
 func NewProjectRepo(db *sql.DB, log log.Log) Project {
-	return &ProjectRepository{db, log}
+	return &ProjectRepository{
+		db: db, 
+		log: log, 
+		admin: new_adminStrategy(db, log),
+	}
 }
 
 func (r *ProjectRepository) CreateProject(projectDto *dto.CreateProjectDto) (uint64, error) {
@@ -54,16 +59,8 @@ func (r *ProjectRepository) GetProjectById(id uint64) (*models.Project, error) {
 }
 
 func (r *ProjectRepository) DeleteProject(projectID, userID uint64) error {
-	result := r.db.QueryRow("SELECT admin FROM projects WHERE id = $1", projectID)
-
-	var adminID uint64
-	if err := result.Scan(&adminID); err != nil {
-		r.log.Error(err)
+	if err := r.admin.IsAdmin(projectID, userID); err != nil {
 		return err
-	}
-
-	if userID != adminID {
-		return ErrNoRights
 	}
 
 	_, err := r.db.Exec("DELETE FROM projects WHERE id = $1", projectID)
@@ -72,22 +69,28 @@ func (r *ProjectRepository) DeleteProject(projectID, userID uint64) error {
 }
 
 func (r *ProjectRepository) UpdateProject(projectData *dto.UpdateProjectDto, userID uint64) error {
-	result := r.db.QueryRow("SELECT admin FROM projects WHERE id = $1", projectData.ProjectID)
-
-	var adminID uint64
-	if err := result.Scan(&adminID); err != nil {
-		r.log.Error(err)
+	if err := r.admin.IsAdmin(projectData.ProjectID, userID); err != nil {
 		return err
-	}
-
-	if userID != adminID {
-		return ErrNoRights
 	}
 
 	_, err := r.db.Exec(
 		"UPDATE projects SET description = $1 WHERE id = $2", 
 		projectData.Description, 
 		projectData.ProjectID,
+	)
+
+	return err
+}
+
+func (r *ProjectRepository) AddMember(memberData *dto.AddMemberDto, userID uint64) error {
+	if err := r.admin.IsAdmin(memberData.ProjectID, userID); err != nil {
+		return err
+	}
+
+	_, err := r.db.Exec(
+		"INSERT INTO projects_members (project_id, member_id) VALUES ($1, $2)",
+		memberData.ProjectID,
+		memberData.MemberID,
 	)
 
 	return err

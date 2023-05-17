@@ -118,6 +118,20 @@ func (m *MockProject) EXPECT() *MockProjectMockRecorder {
 	return m.recorder
 }
 
+// AddMember mocks base method.
+func (m *MockProject) AddMember(memberData *dto.AddMemberDto, userID uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddMember", memberData, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddMember indicates an expected call of AddMember.
+func (mr *MockProjectMockRecorder) AddMember(memberData, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddMember", reflect.TypeOf((*MockProject)(nil).AddMember), memberData, userID)
+}
+
 // CreateProject mocks base method.
 func (m *MockProject) CreateProject(projectData *dto.CreateProjectDto) (uint64, error) {
 	m.ctrl.T.Helper()

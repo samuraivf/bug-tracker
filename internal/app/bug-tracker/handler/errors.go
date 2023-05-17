@@ -19,5 +19,6 @@ var (
 	errEmailIsNotVerified        = errors.New("error email is not verified")
 
 	errInvalidProjectData = errors.New("error invalid project data")
-	errProjectNotFound          = errors.New("error project is not found")
+	errProjectNotFound    = errors.New("error project is not found")
+	errInvalidOperation   = errors.New("error invalid operation")
 )

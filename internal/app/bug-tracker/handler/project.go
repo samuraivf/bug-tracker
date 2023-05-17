@@ -92,3 +92,27 @@ func (h *Handler) updateProject(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, true)
 }
+
+func (h *Handler) addMember(c echo.Context) error {
+	memberData := new(dto.AddMemberDto)
+	userData, err := getUserData(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	if err := c.Bind(memberData); err != nil {
+		h.log.Error(err)
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidJSON))
+	}
+
+	if userData.UserID == memberData.MemberID {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidOperation))
+	}
+
+	err = h.service.Project.AddMember(memberData, userData.UserID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(errInternalServerError))
+	}
+
+	return c.JSON(http.StatusOK, true)
+}

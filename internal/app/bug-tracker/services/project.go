@@ -29,3 +29,7 @@ func (s *ProjectService) DeleteProject(projectID, userID uint64) error {
 func (s *ProjectService) UpdateProject(projectData *dto.UpdateProjectDto, userID uint64) error {
 	return s.repo.UpdateProject(projectData, userID)
 }
+
+func (s *ProjectService) AddMember(memberData *dto.AddMemberDto, userID uint64) error {
+	return s.repo.AddMember(memberData, userID)
+}
