@@ -400,6 +400,20 @@ func (mr *MockProjectMockRecorder) GetProjectById(id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProjectById", reflect.TypeOf((*MockProject)(nil).GetProjectById), id)
 }
 
+// LeaveProject mocks base method.
+func (m *MockProject) LeaveProject(projectID, userID uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LeaveProject", projectID, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// LeaveProject indicates an expected call of LeaveProject.
+func (mr *MockProjectMockRecorder) LeaveProject(projectID, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LeaveProject", reflect.TypeOf((*MockProject)(nil).LeaveProject), projectID, userID)
+}
+
 // UpdateProject mocks base method.
 func (m *MockProject) UpdateProject(projectData *dto.UpdateProjectDto, userID uint64) error {
 	m.ctrl.T.Helper()

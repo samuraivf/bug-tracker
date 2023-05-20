@@ -41,7 +41,7 @@ func Test_signUp(t *testing.T) {
 
 				log.EXPECT().Error(gomock.Any()).Return()
 
-				return &Handler{nil, log, nil}
+				return &Handler{nil, log, nil, nil}
 			},
 			userData:           nil,
 			userDataJSON:       `{"invalid"}`,
@@ -55,7 +55,7 @@ func Test_signUp(t *testing.T) {
 
 				log.EXPECT().Error(gomock.Any()).Return()
 
-				return &Handler{nil, log, nil}
+				return &Handler{nil, log, nil, nil}
 			},
 			userData:           nil,
 			userDataJSON:       `{"name": "Name", "email": "email", "password": "password"}`,
@@ -71,7 +71,7 @@ func Test_signUp(t *testing.T) {
 
 				serv := &services.Service{User: user}
 
-				return &Handler{serv, nil, nil}
+				return &Handler{serv, nil, nil, nil}
 			},
 			userData: &dto.SignUpDto{
 				Name:     "Name",
@@ -93,7 +93,7 @@ func Test_signUp(t *testing.T) {
 
 				serv := &services.Service{User: user}
 
-				return &Handler{serv, nil, nil}
+				return &Handler{serv, nil, nil, nil}
 			},
 			userData: &dto.SignUpDto{
 				Name:     "Name",
@@ -118,7 +118,7 @@ func Test_signUp(t *testing.T) {
 
 				serv := &services.Service{User: user, Redis: redis}
 
-				return &Handler{serv, nil, nil}
+				return &Handler{serv, nil, nil, nil}
 			},
 			userData: &dto.SignUpDto{
 				Name:     "Name",
@@ -144,7 +144,7 @@ func Test_signUp(t *testing.T) {
 
 				serv := &services.Service{User: user, Redis: redis}
 
-				return &Handler{serv, nil, nil}
+				return &Handler{serv, nil, nil, nil}
 			},
 			userData: &dto.SignUpDto{
 				Name:     "Name",
@@ -170,7 +170,7 @@ func Test_signUp(t *testing.T) {
 
 				serv := &services.Service{User: user, Redis: redis}
 
-				return &Handler{serv, nil, nil}
+				return &Handler{serv, nil, nil, nil}
 			},
 			userData: &dto.SignUpDto{
 				Name:     "Name",
@@ -231,7 +231,7 @@ func Test_verifyEmail(t *testing.T) {
 
 				log.EXPECT().Error(gomock.Any()).Return()
 
-				return &Handler{nil, log, nil}
+				return &Handler{nil, log, nil, nil}
 			},
 			verifyEmail:        nil,
 			verifyEmailJSON:    `{"invalid"}`,
@@ -247,7 +247,7 @@ func Test_verifyEmail(t *testing.T) {
 				kafka.EXPECT().Write(verifyEmail.Email).Return(errors.New("error"))
 				log.EXPECT().Error(gomock.Any()).Return()
 
-				return &Handler{nil, log, kafka}
+				return &Handler{nil, log, kafka, nil}
 			},
 			verifyEmail:        &dto.VerifyEmail{Email: "email@gmail.com"},
 			verifyEmailJSON:    `{"email": "email@gmail.com"}`,
@@ -263,7 +263,7 @@ func Test_verifyEmail(t *testing.T) {
 				kafka.EXPECT().Write(verifyEmail.Email).Return(nil)
 				log.EXPECT().Infof("[Kafka] Sent message: %s", verifyEmail.Email)
 
-				return &Handler{nil, log, kafka}
+				return &Handler{nil, log, kafka, nil}
 			},
 			verifyEmailJSON:    `{"email": "email@gmail.com"}`,
 			verifyEmail:        &dto.VerifyEmail{Email: "email@gmail.com"},
@@ -319,7 +319,7 @@ func Test_setEmail(t *testing.T) {
 
 				log.EXPECT().Error(gomock.Any()).Return()
 
-				return &Handler{nil, log, nil}
+				return &Handler{nil, log, nil, nil}
 			},
 			verifyEmail:        nil,
 			verifyEmailJSON:    `{"invalid"}`,
@@ -335,7 +335,7 @@ func Test_setEmail(t *testing.T) {
 
 				redis.EXPECT().Set(ctx, verifyEmail.Email, "verified", time.Minute*10).Return(errors.New("error"))
 
-				return &Handler{&services.Service{Redis: redis}, log, nil}
+				return &Handler{&services.Service{Redis: redis}, log, nil, nil}
 			},
 			verifyEmail:        &dto.VerifyEmail{Email: "email@gmail.com"},
 			verifyEmailJSON:    `{"email": "email@gmail.com"}`,
@@ -350,7 +350,7 @@ func Test_setEmail(t *testing.T) {
 
 				redis.EXPECT().Set(ctx, verifyEmail.Email, "verified", time.Minute*10).Return(nil)
 
-				return &Handler{&services.Service{Redis: redis}, nil, nil}
+				return &Handler{&services.Service{Redis: redis}, nil, nil, nil}
 			},
 			verifyEmail:        &dto.VerifyEmail{Email: "email@gmail.com"},
 			verifyEmailJSON:    `{"email": "email@gmail.com"}`,
@@ -406,7 +406,7 @@ func Test_signIn(t *testing.T) {
 
 				log.EXPECT().Error(gomock.Any()).Return()
 
-				return &Handler{nil, log, nil}
+				return &Handler{nil, log, nil, nil}
 			},
 			userData:           nil,
 			userDataJSON:       `{"invalid"}`,
@@ -420,7 +420,7 @@ func Test_signIn(t *testing.T) {
 
 				log.EXPECT().Error(gomock.Any()).Return()
 
-				return &Handler{nil, log, nil}
+				return &Handler{nil, log, nil, nil}
 			},
 			userData:           nil,
 			userDataJSON:       `{"email": "email", "password": "password"}`,
@@ -438,7 +438,7 @@ func Test_signIn(t *testing.T) {
 
 				serv := &services.Service{User: user}
 
-				return &Handler{serv, log, nil}
+				return &Handler{serv, log, nil, nil}
 			},
 			userData: &dto.SignInDto{
 				Email:    "email@gmail.com",
@@ -460,7 +460,7 @@ func Test_signIn(t *testing.T) {
 
 				serv := &services.Service{User: user}
 
-				return &Handler{serv, nil, nil}
+				return &Handler{serv, nil, nil, nil}
 			},
 			userData: &dto.SignInDto{
 				Email:    "email@gmail.com",
@@ -521,7 +521,7 @@ func Test_refresh(t *testing.T) {
 		{
 			name: "No refresh token",
 			mockBehaviour: func(c *gomock.Controller, refreshToken string) *Handler {
-				return &Handler{nil, nil, nil}
+				return &Handler{nil, nil, nil, nil}
 			},
 			refreshToken:       "",
 			refreshTokenCookie: &http.Cookie{},
@@ -535,7 +535,7 @@ func Test_refresh(t *testing.T) {
 
 				auth.EXPECT().ParseRefreshToken(refreshToken).Return(nil, errors.New("error"))
 
-				return &Handler{&services.Service{Auth: auth}, nil, nil}
+				return &Handler{&services.Service{Auth: auth}, nil, nil, nil}
 			},
 			refreshToken: "token",
 			refreshTokenCookie: &http.Cookie{
@@ -564,7 +564,7 @@ func Test_refresh(t *testing.T) {
 				auth.EXPECT().ParseRefreshToken(refreshToken).Return(tokenData, nil)
 				redis.EXPECT().GetRefreshToken(ctx, key).Return("", errors.New("error"))
 
-				return &Handler{&services.Service{Auth: auth, Redis: redis}, nil, nil}
+				return &Handler{&services.Service{Auth: auth, Redis: redis}, nil, nil, nil}
 			},
 			refreshToken: "token",
 			refreshTokenCookie: &http.Cookie{
@@ -593,7 +593,7 @@ func Test_refresh(t *testing.T) {
 				auth.EXPECT().ParseRefreshToken(refreshToken).Return(tokenData, nil)
 				redis.EXPECT().GetRefreshToken(ctx, key).Return("token", nil)
 
-				return &Handler{&services.Service{Auth: auth, Redis: redis}, nil, nil}
+				return &Handler{&services.Service{Auth: auth, Redis: redis}, nil, nil, nil}
 			},
 			refreshToken: "token",
 			refreshTokenCookie: &http.Cookie{
@@ -658,7 +658,7 @@ func Test_logout(t *testing.T) {
 		{
 			name: "No refresh token",
 			mockBehaviour: func(c *gomock.Controller, refreshToken string) *Handler {
-				return &Handler{nil, nil, nil}
+				return &Handler{nil, nil, nil, nil}
 			},
 			refreshToken:       "",
 			refreshTokenCookie: &http.Cookie{},
@@ -672,7 +672,7 @@ func Test_logout(t *testing.T) {
 
 				auth.EXPECT().ParseRefreshToken(refreshToken).Return(nil, errors.New("error"))
 
-				return &Handler{&services.Service{Auth: auth}, nil, nil}
+				return &Handler{&services.Service{Auth: auth}, nil, nil, nil}
 			},
 			refreshToken: "token",
 			refreshTokenCookie: &http.Cookie{
@@ -701,7 +701,7 @@ func Test_logout(t *testing.T) {
 				auth.EXPECT().ParseRefreshToken(refreshToken).Return(tokenData, nil)
 				redis.EXPECT().DeleteRefreshToken(ctx, key).Return(errors.New("error"))
 
-				return &Handler{&services.Service{Auth: auth, Redis: redis}, nil, nil}
+				return &Handler{&services.Service{Auth: auth, Redis: redis}, nil, nil, nil}
 			},
 			refreshToken: "token",
 			refreshTokenCookie: &http.Cookie{
@@ -730,7 +730,7 @@ func Test_logout(t *testing.T) {
 				auth.EXPECT().ParseRefreshToken(refreshToken).Return(tokenData, nil)
 				redis.EXPECT().DeleteRefreshToken(ctx, key).Return(nil)
 
-				return &Handler{&services.Service{Auth: auth, Redis: redis}, nil, nil}
+				return &Handler{&services.Service{Auth: auth, Redis: redis}, nil, nil, nil}
 			},
 			refreshToken: "token",
 			refreshTokenCookie: &http.Cookie{
@@ -795,7 +795,7 @@ func Test_createTokens(t *testing.T) {
 				auth.EXPECT().GenerateAccessToken(username, userID).Return("", errors.New("error"))
 				log.EXPECT().Error(gomock.Any()).Return()
 
-				return &Handler{&services.Service{Auth: auth}, log, nil}
+				return &Handler{&services.Service{Auth: auth}, log, nil, nil}
 			},
 			username:           "username",
 			userID:             uint64(1),
@@ -812,7 +812,7 @@ func Test_createTokens(t *testing.T) {
 				auth.EXPECT().GenerateRefreshToken(username, userID).Return(&services.RefreshTokenData{}, errors.New("error"))
 				log.EXPECT().Error(gomock.Any()).Return()
 
-				return &Handler{&services.Service{Auth: auth}, log, nil}
+				return &Handler{&services.Service{Auth: auth}, log, nil, nil}
 			},
 			username:           "username",
 			userID:             uint64(1),
@@ -837,7 +837,7 @@ func Test_createTokens(t *testing.T) {
 				key := fmt.Sprintf("%s:%s", username, refreshTokenData.ID)
 				redis.EXPECT().SetRefreshToken(context.Background(), key, refreshTokenData.RefreshToken).Return(errors.New("error"))
 
-				return &Handler{&services.Service{Auth: auth, Redis: redis}, log, nil}
+				return &Handler{&services.Service{Auth: auth, Redis: redis}, log, nil, nil}
 			},
 			username:           "username",
 			userID:             uint64(1),
@@ -863,7 +863,7 @@ func Test_createTokens(t *testing.T) {
 				redis.EXPECT().SetRefreshToken(context.Background(), key, refreshTokenData.RefreshToken).Return(nil)
 				auth.EXPECT().GetRefreshTokenTTL().Return(time.Minute)
 
-				return &Handler{&services.Service{Auth: auth, Redis: redis}, log, nil}
+				return &Handler{&services.Service{Auth: auth, Redis: redis}, log, nil, nil}
 			},
 			username:           "username",
 			userID:             uint64(1),

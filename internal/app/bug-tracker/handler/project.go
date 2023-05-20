@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 
@@ -31,18 +30,12 @@ func (h *Handler) createProject(c echo.Context) error {
 }
 
 func (h *Handler) getProjectById(c echo.Context) error {
-	id := c.Param("id")
-
-	if id == "" {
-		return c.JSON(http.StatusBadRequest, newErrorMessage(errProjectNotFound))
-	}
-
-	uint64ID, err := strconv.ParseUint(id, 10, 64)
+	id, err := h.params.GetIdParam(c)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, newErrorMessage(errProjectNotFound))
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
 	}
 
-	project, err := h.service.Project.GetProjectById(uint64ID)
+	project, err := h.service.Project.GetProjectById(id)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, newErrorMessage(errProjectNotFound))
 	}
@@ -51,22 +44,17 @@ func (h *Handler) getProjectById(c echo.Context) error {
 }
 
 func (h *Handler) deleteProject(c echo.Context) error {
-	id := c.Param("id")
+	id, err := h.params.GetIdParam(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
 	userData, err := getUserData(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
 	}
 
-	if id == "" {
-		return c.JSON(http.StatusBadRequest, newErrorMessage(errProjectNotFound))
-	}
-
-	uint64ID, err := strconv.ParseUint(id, 10, 64)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, newErrorMessage(errProjectNotFound))
-	}
-
-	if err := h.service.Project.DeleteProject(uint64ID, userData.UserID); err != nil {
+	if err := h.service.Project.DeleteProject(id, userData.UserID); err != nil {
 		return c.JSON(http.StatusInternalServerError, newErrorMessage(err))
 	}
 
@@ -112,6 +100,25 @@ func (h *Handler) addMember(c echo.Context) error {
 	err = h.service.Project.AddMember(memberData, userData.UserID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, newErrorMessage(errInternalServerError))
+	}
+
+	return c.JSON(http.StatusOK, true)
+}
+
+func (h *Handler) leaveProject(c echo.Context) error {
+	id, err := h.params.GetIdParam(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	userData, err := getUserData(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	err = h.service.Project.LeaveProject(id, userData.UserID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(err))
 	}
 
 	return c.JSON(http.StatusOK, true)

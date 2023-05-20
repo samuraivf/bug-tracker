@@ -67,7 +67,7 @@ func Test_isUnauthorized(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			h := NewHandler(nil, nil, nil)
+			h := NewHandler(nil, nil, nil, nil)
 			e := echo.New()
 			middleware := h.isUnauthorized(func(c echo.Context) error {
 				return c.JSON(http.StatusOK, nil)

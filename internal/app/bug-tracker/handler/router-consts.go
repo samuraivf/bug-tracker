@@ -15,4 +15,5 @@ const (
 	create    = "/create"
 	update    = "/update"
 	addMember = "/add-member"
+	leave     = "/leave/:id"
 )

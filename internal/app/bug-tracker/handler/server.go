@@ -29,8 +29,9 @@ func CreateServer() {
 
 	repo := repository.NewRepository(dep.db, logger)
 	s := services.NewService(repo, dep.redis)
+	p := &params{}
 
-	h := NewHandler(s, logger, dep.kafka)
+	h := NewHandler(s, logger, dep.kafka, p)
 
 	e.Use(Logger(logger))
 	e.Use(middleware.Recover())

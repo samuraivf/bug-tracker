@@ -33,6 +33,7 @@ func Test_setRoutes(t *testing.T) {
 		project.DELETE(id, h.deleteProject)
 		project.PUT(update, h.updateProject)
 		project.POST(addMember, h.addMember)
+		project.GET(leave, h.leaveProject)
 	}
 
 	e = setRoutes(e, h)

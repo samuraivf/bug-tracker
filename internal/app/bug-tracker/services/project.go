@@ -33,3 +33,7 @@ func (s *ProjectService) UpdateProject(projectData *dto.UpdateProjectDto, userID
 func (s *ProjectService) AddMember(memberData *dto.AddMemberDto, userID uint64) error {
 	return s.repo.AddMember(memberData, userID)
 }
+
+func (s *ProjectService) LeaveProject(projectID, userID uint64) error {
+	return s.repo.LeaveProject(projectID, userID)
+}

@@ -10,8 +10,9 @@ type Handler struct {
 	service *services.Service
 	log     log.Log
 	kafka   kafka.Kafka
+	params  Params
 }
 
-func NewHandler(s *services.Service, log log.Log, kafkaWriter kafka.Kafka) *Handler {
-	return &Handler{s, log, kafkaWriter}
+func NewHandler(s *services.Service, log log.Log, kafkaWriter kafka.Kafka, params Params) *Handler {
+	return &Handler{s, log, kafkaWriter, params}
 }

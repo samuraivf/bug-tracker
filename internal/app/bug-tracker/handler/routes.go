@@ -26,6 +26,7 @@ func setRoutes(e *echo.Echo, h *Handler) *echo.Echo {
 		project.DELETE(id, h.deleteProject)
 		project.PUT(update, h.updateProject)
 		project.POST(addMember, h.addMember)
+		project.GET(leave, h.leaveProject)
 	}
 
 	return e

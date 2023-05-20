@@ -65,6 +65,10 @@ func (r *ProjectRepository) DeleteProject(projectID, userID uint64) error {
 
 	_, err := r.db.Exec("DELETE FROM projects WHERE id = $1", projectID)
 
+	if err != nil {
+		r.log.Error(err)
+	}
+	
 	return err
 }
 
@@ -79,6 +83,10 @@ func (r *ProjectRepository) UpdateProject(projectData *dto.UpdateProjectDto, use
 		projectData.ProjectID,
 	)
 
+	if err != nil {
+		r.log.Error(err)
+	}
+	
 	return err
 }
 
@@ -93,5 +101,22 @@ func (r *ProjectRepository) AddMember(memberData *dto.AddMemberDto, userID uint6
 		memberData.MemberID,
 	)
 
+	if err != nil {
+		r.log.Error(err)
+	}
+	
+	return err
+}
+
+func (r *ProjectRepository) LeaveProject(projectID, userID uint64) error {
+	if err := r.admin.IsAdmin(projectID, userID); err == nil {
+		return ErrNoRights
+	}
+
+	_, err := r.db.Exec("DELETE FROM projects_members WHERE member_id = $1", userID)
+	if err != nil {
+		r.log.Error(err)
+	}
+	
 	return err
 }

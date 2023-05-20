@@ -13,19 +13,21 @@ import (
 )
 
 func Test_newHandler(t *testing.T) {
-	handler := NewHandler(nil, nil, nil)
-	require.Equal(t, &Handler{nil, nil, nil}, handler)
+	handler := NewHandler(nil, nil, nil, nil)
+	require.Equal(t, &Handler{nil, nil, nil, nil}, handler)
 
 	c := gomock.NewController(t)
 	auth := mock_services.NewMockAuth(c)
 	srv := &services.Service{Auth: auth}
 	log := mock_log.NewMockLog(c)
 	kafka := mock_kafka.NewMockKafka(c)
-	handler = NewHandler(srv, log, kafka)
+	p := &params{}
+	handler = NewHandler(srv, log, kafka, p)
 
 	require.Equal(t, &Handler{
 		service: &services.Service{Auth: auth},
 		log:     log,
 		kafka:   kafka,
+		params:  p,
 	}, handler)
 }
