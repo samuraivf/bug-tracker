@@ -203,10 +203,10 @@ func Test_getProjectById(t *testing.T) {
 
 			e := echo.New()
 			defer e.Close()
-			
+
 			validator := validator.New()
 			e.Validator = newValidator(validator)
-			
+
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
@@ -323,19 +323,19 @@ func Test_deleteProject(t *testing.T) {
 			if test.userData != nil {
 				userID = test.userData.UserID
 			}
-			
+
 			e := echo.New()
 			defer e.Close()
-			
+
 			validator := validator.New()
 			e.Validator = newValidator(validator)
-			
+
 			req := httptest.NewRequest(http.MethodDelete, "/", nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
-			
+
 			echoCtx := e.NewContext(req, rec)
-			
+
 			handler := test.mockBehaviour(c, test.id, userID, echoCtx)
 			e.DELETE(id, handler.deleteProject)
 
@@ -384,8 +384,8 @@ func Test_updateProject(t *testing.T) {
 
 				return &Handler{log: log}
 			},
-			userData: &services.TokenData{UserID: 1},
-			projectDataJSON: "{invalid}",
+			userData:           &services.TokenData{UserID: 1},
+			projectDataJSON:    "{invalid}",
 			expectedStatusCode: http.StatusBadRequest,
 			expectedReturnBody: `{"message":"` + errInvalidJSON.Error() + `"}` + "\n",
 		},
@@ -400,7 +400,7 @@ func Test_updateProject(t *testing.T) {
 
 				return &Handler{serv, nil, nil, nil}
 			},
-			projectData: &dto.UpdateProjectDto{Description: "description", ProjectID: 1},
+			projectData:     &dto.UpdateProjectDto{Description: "description", ProjectID: 1},
 			projectDataJSON: `{"projectId": 1, "description": "description"}`,
 			userData: &services.TokenData{
 				UserID: 1,
@@ -419,7 +419,7 @@ func Test_updateProject(t *testing.T) {
 
 				return &Handler{serv, nil, nil, nil}
 			},
-			projectData: &dto.UpdateProjectDto{Description: "description", ProjectID: 1},
+			projectData:     &dto.UpdateProjectDto{Description: "description", ProjectID: 1},
 			projectDataJSON: `{"projectId": 1, "description": "description"}`,
 			userData: &services.TokenData{
 				UserID: 1,
@@ -471,8 +471,8 @@ func Test_addMember(t *testing.T) {
 	tests := []struct {
 		name               string
 		mockBehaviour      mockBehaviour
-		memberData        *dto.AddMemberDto
-		memberDataJSON    string
+		memberData         *dto.AddMemberDto
+		memberDataJSON     string
 		userData           *services.TokenData
 		expectedStatusCode int
 		expectedReturnBody string
@@ -494,8 +494,8 @@ func Test_addMember(t *testing.T) {
 
 				return &Handler{log: log}
 			},
-			userData: &services.TokenData{UserID: 1},
-			memberDataJSON: "{invalid}",
+			userData:           &services.TokenData{UserID: 1},
+			memberDataJSON:     "{invalid}",
 			expectedStatusCode: http.StatusBadRequest,
 			expectedReturnBody: `{"message":"` + errInvalidJSON.Error() + `"}` + "\n",
 		},
@@ -504,9 +504,9 @@ func Test_addMember(t *testing.T) {
 			mockBehaviour: func(c *gomock.Controller, memberData *dto.AddMemberDto, userID uint64) *Handler {
 				return &Handler{}
 			},
-			userData: &services.TokenData{UserID: 1},
-			memberDataJSON: `{"projectId": 1, "memberId": 1}`,
-			memberData: &dto.AddMemberDto{ProjectID: 1, MemberID: 1},
+			userData:           &services.TokenData{UserID: 1},
+			memberDataJSON:     `{"projectId": 1, "memberId": 1}`,
+			memberData:         &dto.AddMemberDto{ProjectID: 1, MemberID: 1},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedReturnBody: `{"message":"` + errInvalidOperation.Error() + `"}` + "\n",
 		},
@@ -521,7 +521,7 @@ func Test_addMember(t *testing.T) {
 
 				return &Handler{serv, nil, nil, nil}
 			},
-			memberData: &dto.AddMemberDto{MemberID: 2, ProjectID: 1},
+			memberData:     &dto.AddMemberDto{MemberID: 2, ProjectID: 1},
 			memberDataJSON: `{"projectId": 1, "memberId": 2}`,
 			userData: &services.TokenData{
 				UserID: 1,
@@ -540,7 +540,7 @@ func Test_addMember(t *testing.T) {
 
 				return &Handler{serv, nil, nil, nil}
 			},
-			memberData: &dto.AddMemberDto{MemberID: 2, ProjectID: 1},
+			memberData:     &dto.AddMemberDto{MemberID: 2, ProjectID: 1},
 			memberDataJSON: `{"projectId": 1, "memberId": 2}`,
 			userData: &services.TokenData{
 				UserID: 1,
@@ -678,19 +678,19 @@ func Test_leaveProject(t *testing.T) {
 			if test.userData != nil {
 				userID = test.userData.UserID
 			}
-			
+
 			e := echo.New()
 			defer e.Close()
-			
+
 			validator := validator.New()
 			e.Validator = newValidator(validator)
-			
+
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
-			
+
 			echoCtx := e.NewContext(req, rec)
-			
+
 			handler := test.mockBehaviour(c, test.id, userID, echoCtx)
 			e.GET(id, handler.leaveProject)
 

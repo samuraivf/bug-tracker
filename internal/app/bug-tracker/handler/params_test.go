@@ -18,22 +18,22 @@ func Test_GetIdParam(t *testing.T) {
 		expectedError  error
 	}{
 		{
-			name: "Error empty param",
-			paramId: "",
+			name:           "Error empty param",
+			paramId:        "",
 			expectedResult: 0,
-			expectedError: errInvalidParam,
+			expectedError:  errInvalidParam,
 		},
 		{
-			name: "Error invalid param",
-			paramId: "1b",
+			name:           "Error invalid param",
+			paramId:        "1b",
 			expectedResult: 0,
-			expectedError: errInvalidParam,
+			expectedError:  errInvalidParam,
 		},
 		{
-			name: "OK",
-			paramId: "1",
+			name:           "OK",
+			paramId:        "1",
 			expectedResult: 1,
-			expectedError: nil,
+			expectedError:  nil,
 		},
 	}
 

@@ -35,9 +35,9 @@ func Test_IsAdmin(t *testing.T) {
 		expectedError error
 	}{
 		{
-			name: "Error cannot get admin",
+			name:      "Error cannot get admin",
 			projectID: 1,
-			userID: 1,
+			userID:    1,
 			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64) *adminStrategy {
 				db, mock, _ := sqlmock.New()
 				log := mock_log.NewMockLog(c)
@@ -52,9 +52,9 @@ func Test_IsAdmin(t *testing.T) {
 			expectedError: err,
 		},
 		{
-			name: "Error no rights",
+			name:      "Error no rights",
 			projectID: 1,
-			userID: 1,
+			userID:    1,
 			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64) *adminStrategy {
 				db, mock, _ := sqlmock.New()
 				log := mock_log.NewMockLog(c)
@@ -69,9 +69,9 @@ func Test_IsAdmin(t *testing.T) {
 			expectedError: ErrNoRights,
 		},
 		{
-			name: "OK",
+			name:      "OK",
 			projectID: 1,
-			userID: 1,
+			userID:    1,
 			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64) *adminStrategy {
 				db, mock, _ := sqlmock.New()
 				log := mock_log.NewMockLog(c)

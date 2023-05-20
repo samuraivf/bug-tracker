@@ -197,7 +197,7 @@ func Test_UpdateProject(t *testing.T) {
 
 				return &ProjectService{repo: repository.Repository{Project: project}}
 			},
-			projectData: &dto.UpdateProjectDto{Description: "description"},
+			projectData:   &dto.UpdateProjectDto{Description: "description"},
 			userID:        1,
 			expectedError: err,
 		},
@@ -210,7 +210,7 @@ func Test_UpdateProject(t *testing.T) {
 
 				return &ProjectService{repo: repository.Repository{Project: project}}
 			},
-			projectData: &dto.UpdateProjectDto{Description: "description"},
+			projectData:   &dto.UpdateProjectDto{Description: "description"},
 			userID:        1,
 			expectedError: nil,
 		},
@@ -236,7 +236,7 @@ func Test_AddMember(t *testing.T) {
 	tests := []struct {
 		name          string
 		mockBehaviour mockBehaviour
-		memberData   *dto.AddMemberDto
+		memberData    *dto.AddMemberDto
 		userID        uint64
 		expectedError error
 	}{
@@ -249,7 +249,7 @@ func Test_AddMember(t *testing.T) {
 
 				return &ProjectService{repo: repository.Repository{Project: project}}
 			},
-			memberData: &dto.AddMemberDto{ProjectID: 1, MemberID: 2},
+			memberData:    &dto.AddMemberDto{ProjectID: 1, MemberID: 2},
 			userID:        1,
 			expectedError: err,
 		},
@@ -262,7 +262,7 @@ func Test_AddMember(t *testing.T) {
 
 				return &ProjectService{repo: repository.Repository{Project: project}}
 			},
-			memberData: &dto.AddMemberDto{ProjectID: 1, MemberID: 2},
+			memberData:    &dto.AddMemberDto{ProjectID: 1, MemberID: 2},
 			userID:        1,
 			expectedError: nil,
 		},

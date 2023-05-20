@@ -14,15 +14,15 @@ var (
 )
 
 type ProjectRepository struct {
-	db  *sql.DB
-	log log.Log
+	db    *sql.DB
+	log   log.Log
 	admin admin
 }
 
 func NewProjectRepo(db *sql.DB, log log.Log) Project {
 	return &ProjectRepository{
-		db: db, 
-		log: log, 
+		db:    db,
+		log:   log,
 		admin: new_adminStrategy(db, log),
 	}
 }
@@ -68,7 +68,7 @@ func (r *ProjectRepository) DeleteProject(projectID, userID uint64) error {
 	if err != nil {
 		r.log.Error(err)
 	}
-	
+
 	return err
 }
 
@@ -78,15 +78,15 @@ func (r *ProjectRepository) UpdateProject(projectData *dto.UpdateProjectDto, use
 	}
 
 	_, err := r.db.Exec(
-		"UPDATE projects SET description = $1 WHERE id = $2", 
-		projectData.Description, 
+		"UPDATE projects SET description = $1 WHERE id = $2",
+		projectData.Description,
 		projectData.ProjectID,
 	)
 
 	if err != nil {
 		r.log.Error(err)
 	}
-	
+
 	return err
 }
 
@@ -104,7 +104,7 @@ func (r *ProjectRepository) AddMember(memberData *dto.AddMemberDto, userID uint6
 	if err != nil {
 		r.log.Error(err)
 	}
-	
+
 	return err
 }
 
@@ -117,6 +117,6 @@ func (r *ProjectRepository) LeaveProject(projectID, userID uint64) error {
 	if err != nil {
 		r.log.Error(err)
 	}
-	
+
 	return err
 }
