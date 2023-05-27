@@ -340,7 +340,7 @@ func Test_SetNewAdmin(t *testing.T) {
 	tests := []struct {
 		name          string
 		mockBehaviour mockBehaviour
-		newAdminData *dto.NewAdminDto
+		newAdminData  *dto.NewAdminDto
 		userID        uint64
 		expectedError error
 	}{
@@ -353,7 +353,7 @@ func Test_SetNewAdmin(t *testing.T) {
 
 				return &ProjectService{repo: repository.Repository{Project: project}}
 			},
-			newAdminData: &dto.NewAdminDto{ProjectID: 1, NewAdminID: 2},
+			newAdminData:  &dto.NewAdminDto{ProjectID: 1, NewAdminID: 2},
 			userID:        1,
 			expectedError: err,
 		},
@@ -366,7 +366,7 @@ func Test_SetNewAdmin(t *testing.T) {
 
 				return &ProjectService{repo: repository.Repository{Project: project}}
 			},
-			newAdminData: &dto.NewAdminDto{ProjectID: 1, NewAdminID: 2},
+			newAdminData:  &dto.NewAdminDto{ProjectID: 1, NewAdminID: 2},
 			userID:        1,
 			expectedError: nil,
 		},

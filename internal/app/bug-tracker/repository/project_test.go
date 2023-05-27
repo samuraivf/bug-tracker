@@ -522,9 +522,9 @@ func Test_SetNewAdmin(t *testing.T) {
 				mock.ExpectBegin()
 				mock.ExpectExec(
 					regexp.QuoteMeta("UPDATE projects SET admin = $1 WHERE id = $2"),
-					).WithArgs(
-						newAdminData.NewAdminID,
-						newAdminData.ProjectID,
+				).WithArgs(
+					newAdminData.NewAdminID,
+					newAdminData.ProjectID,
 				).WillReturnError(err)
 
 				log.EXPECT().Error(err)
@@ -548,17 +548,17 @@ func Test_SetNewAdmin(t *testing.T) {
 				mock.ExpectBegin()
 				mock.ExpectExec(
 					regexp.QuoteMeta("UPDATE projects SET admin = $1 WHERE id = $2"),
-					).WithArgs(
-						newAdminData.NewAdminID,
-						newAdminData.ProjectID,
+				).WithArgs(
+					newAdminData.NewAdminID,
+					newAdminData.ProjectID,
 				).WillReturnResult(sqlmock.NewResult(1, 1))
 
 				log.EXPECT().Infof("Set new admin = %d in project = %d", newAdminData.NewAdminID, newAdminData.ProjectID)
 
 				mock.ExpectExec(
 					regexp.QuoteMeta("DELETE FROM projects_members WHERE member_id = $1"),
-					).WithArgs(
-						newAdminData.NewAdminID,
+				).WithArgs(
+					newAdminData.NewAdminID,
 				).WillReturnError(err)
 
 				log.EXPECT().Error(err)
@@ -582,24 +582,24 @@ func Test_SetNewAdmin(t *testing.T) {
 				mock.ExpectBegin()
 				mock.ExpectExec(
 					regexp.QuoteMeta("UPDATE projects SET admin = $1 WHERE id = $2"),
-					).WithArgs(
-						newAdminData.NewAdminID,
-						newAdminData.ProjectID,
+				).WithArgs(
+					newAdminData.NewAdminID,
+					newAdminData.ProjectID,
 				).WillReturnResult(sqlmock.NewResult(1, 1))
 
 				log.EXPECT().Infof("Set new admin = %d in project = %d", newAdminData.NewAdminID, newAdminData.ProjectID)
 
 				mock.ExpectExec(
 					regexp.QuoteMeta("DELETE FROM projects_members WHERE member_id = $1"),
-					).WithArgs(
-						newAdminData.NewAdminID,
+				).WithArgs(
+					newAdminData.NewAdminID,
 				).WillReturnResult(sqlmock.NewResult(1, 1))
 
 				mock.ExpectExec(
 					regexp.QuoteMeta("INSERT INTO projects_members (project_id, member_id) VALUES ($1, $2)"),
-					).WithArgs(
-						newAdminData.ProjectID,
-						adminID,
+				).WithArgs(
+					newAdminData.ProjectID,
+					adminID,
 				).WillReturnError(err)
 
 				log.EXPECT().Error(err)
@@ -623,24 +623,24 @@ func Test_SetNewAdmin(t *testing.T) {
 				mock.ExpectBegin()
 				mock.ExpectExec(
 					regexp.QuoteMeta("UPDATE projects SET admin = $1 WHERE id = $2"),
-					).WithArgs(
-						newAdminData.NewAdminID,
-						newAdminData.ProjectID,
+				).WithArgs(
+					newAdminData.NewAdminID,
+					newAdminData.ProjectID,
 				).WillReturnResult(sqlmock.NewResult(1, 1))
 
 				log.EXPECT().Infof("Set new admin = %d in project = %d", newAdminData.NewAdminID, newAdminData.ProjectID)
 
 				mock.ExpectExec(
 					regexp.QuoteMeta("DELETE FROM projects_members WHERE member_id = $1"),
-					).WithArgs(
-						newAdminData.NewAdminID,
+				).WithArgs(
+					newAdminData.NewAdminID,
 				).WillReturnResult(sqlmock.NewResult(1, 1))
 
 				mock.ExpectExec(
 					regexp.QuoteMeta("INSERT INTO projects_members (project_id, member_id) VALUES ($1, $2)"),
-					).WithArgs(
-						newAdminData.ProjectID,
-						adminID,
+				).WithArgs(
+					newAdminData.ProjectID,
+					adminID,
 				).WillReturnResult(sqlmock.NewResult(1, 1))
 
 				mock.ExpectCommit().WillReturnError(err)
@@ -664,24 +664,24 @@ func Test_SetNewAdmin(t *testing.T) {
 				mock.ExpectBegin()
 				mock.ExpectExec(
 					regexp.QuoteMeta("UPDATE projects SET admin = $1 WHERE id = $2"),
-					).WithArgs(
-						newAdminData.NewAdminID,
-						newAdminData.ProjectID,
+				).WithArgs(
+					newAdminData.NewAdminID,
+					newAdminData.ProjectID,
 				).WillReturnResult(sqlmock.NewResult(1, 1))
 
 				log.EXPECT().Infof("Set new admin = %d in project = %d", newAdminData.NewAdminID, newAdminData.ProjectID)
 
 				mock.ExpectExec(
 					regexp.QuoteMeta("DELETE FROM projects_members WHERE member_id = $1"),
-					).WithArgs(
-						newAdminData.NewAdminID,
+				).WithArgs(
+					newAdminData.NewAdminID,
 				).WillReturnResult(sqlmock.NewResult(1, 1))
 
 				mock.ExpectExec(
 					regexp.QuoteMeta("INSERT INTO projects_members (project_id, member_id) VALUES ($1, $2)"),
-					).WithArgs(
-						newAdminData.ProjectID,
-						adminID,
+				).WithArgs(
+					newAdminData.ProjectID,
+					adminID,
 				).WillReturnResult(sqlmock.NewResult(1, 1))
 
 				mock.ExpectCommit()
