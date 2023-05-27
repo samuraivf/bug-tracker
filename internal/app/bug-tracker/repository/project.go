@@ -120,3 +120,43 @@ func (r *ProjectRepository) LeaveProject(projectID, userID uint64) error {
 
 	return err
 }
+
+func (r *ProjectRepository) SetNewAdmin(newAdminData *dto.NewAdminDto, adminID uint64) error {
+	if err := r.admin.IsAdmin(newAdminData.ProjectID, adminID); err != nil {
+		return err
+	}
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("UPDATE projects SET admin = $1 WHERE id = $2", newAdminData.NewAdminID, newAdminData.ProjectID)
+	if err != nil {
+		r.log.Error(err)
+		tx.Rollback()
+		return err
+	}
+	r.log.Infof("Set new admin = %d in project = %d", newAdminData.NewAdminID, newAdminData.ProjectID)
+
+	_, err = tx.Exec("DELETE FROM projects_members WHERE member_id = $1", newAdminData.NewAdminID)
+	if err != nil {
+		r.log.Error(err)
+		tx.Rollback()
+		return err
+	}
+
+	_, err = tx.Exec("INSERT INTO projects_members (project_id, member_id) VALUES ($1, $2)", newAdminData.ProjectID, adminID)
+	if err != nil {
+		r.log.Error(err)
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		r.log.Error(err)
+	}
+
+	return err
+}

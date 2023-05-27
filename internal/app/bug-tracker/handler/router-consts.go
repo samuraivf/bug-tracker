@@ -16,4 +16,5 @@ const (
 	update    = "/update"
 	addMember = "/add-member"
 	leave     = "/leave/:id"
+	setAdmin  = "/set-admin"
 )

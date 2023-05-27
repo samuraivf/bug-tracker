@@ -24,6 +24,7 @@ type Project interface {
 	UpdateProject(projectData *dto.UpdateProjectDto, userID uint64) error
 	AddMember(memberData *dto.AddMemberDto, userID uint64) error
 	LeaveProject(projectID, userID uint64) error
+	SetNewAdmin(newAdminData *dto.NewAdminDto, adminID uint64) error
 }
 
 type Repository struct {

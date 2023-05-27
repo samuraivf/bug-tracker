@@ -335,7 +335,7 @@ func Test_AddMember(t *testing.T) {
 			expectedError: err,
 		},
 		{
-			name:       "Error cannot update project",
+			name:       "Error cannot add member to project",
 			memberData: &dto.AddMemberDto{ProjectID: 1, MemberID: 2},
 			userID:     1,
 			mockBehaviour: func(c *gomock.Controller, memberData *dto.AddMemberDto, userID uint64) *ProjectRepository {
@@ -461,6 +461,244 @@ func Test_LeaveProject(t *testing.T) {
 
 			repo := test.mockBehaviour(c, test.projectID, test.userID)
 			err := repo.LeaveProject(test.projectID, test.userID)
+
+			require.Equal(t, test.expectedError, err)
+		})
+	}
+}
+
+func Test_SetNewAdmin(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, newAdminData *dto.NewAdminDto, adminID uint64) *ProjectRepository
+	err := errors.New("error")
+
+	tests := []struct {
+		name          string
+		newAdminData  *dto.NewAdminDto
+		userID        uint64
+		mockBehaviour mockBehaviour
+		expectedError error
+	}{
+		{
+			name:         "Error in admin",
+			newAdminData: &dto.NewAdminDto{ProjectID: 1, NewAdminID: 2},
+			userID:       1,
+			mockBehaviour: func(c *gomock.Controller, newAdminData *dto.NewAdminDto, adminID uint64) *ProjectRepository {
+				admin := mock_repository.NewMockadmin(c)
+
+				admin.EXPECT().IsAdmin(newAdminData.ProjectID, adminID).Return(err)
+
+				return &ProjectRepository{admin: admin}
+			},
+			expectedError: err,
+		},
+		{
+			name:         "Error cannot begin transaction",
+			newAdminData: &dto.NewAdminDto{ProjectID: 1, NewAdminID: 2},
+			userID:       1,
+			mockBehaviour: func(c *gomock.Controller, newAdminData *dto.NewAdminDto, adminID uint64) *ProjectRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+				admin := mock_repository.NewMockadmin(c)
+
+				admin.EXPECT().IsAdmin(newAdminData.ProjectID, adminID).Return(nil)
+
+				mock.ExpectBegin().WillReturnError(err)
+
+				return &ProjectRepository{db: db, log: log, admin: admin}
+			},
+			expectedError: err,
+		},
+		{
+			name:         "Error cannot set new admin",
+			newAdminData: &dto.NewAdminDto{ProjectID: 1, NewAdminID: 2},
+			userID:       1,
+			mockBehaviour: func(c *gomock.Controller, newAdminData *dto.NewAdminDto, adminID uint64) *ProjectRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+				admin := mock_repository.NewMockadmin(c)
+
+				admin.EXPECT().IsAdmin(newAdminData.ProjectID, adminID).Return(nil)
+
+				mock.ExpectBegin()
+				mock.ExpectExec(
+					regexp.QuoteMeta("UPDATE projects SET admin = $1 WHERE id = $2"),
+					).WithArgs(
+						newAdminData.NewAdminID,
+						newAdminData.ProjectID,
+				).WillReturnError(err)
+
+				log.EXPECT().Error(err)
+				mock.ExpectRollback()
+
+				return &ProjectRepository{db: db, log: log, admin: admin}
+			},
+			expectedError: err,
+		},
+		{
+			name:         "Error cannot delete from projects_members",
+			newAdminData: &dto.NewAdminDto{ProjectID: 1, NewAdminID: 2},
+			userID:       1,
+			mockBehaviour: func(c *gomock.Controller, newAdminData *dto.NewAdminDto, adminID uint64) *ProjectRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+				admin := mock_repository.NewMockadmin(c)
+
+				admin.EXPECT().IsAdmin(newAdminData.ProjectID, adminID).Return(nil)
+
+				mock.ExpectBegin()
+				mock.ExpectExec(
+					regexp.QuoteMeta("UPDATE projects SET admin = $1 WHERE id = $2"),
+					).WithArgs(
+						newAdminData.NewAdminID,
+						newAdminData.ProjectID,
+				).WillReturnResult(sqlmock.NewResult(1, 1))
+
+				log.EXPECT().Infof("Set new admin = %d in project = %d", newAdminData.NewAdminID, newAdminData.ProjectID)
+
+				mock.ExpectExec(
+					regexp.QuoteMeta("DELETE FROM projects_members WHERE member_id = $1"),
+					).WithArgs(
+						newAdminData.NewAdminID,
+				).WillReturnError(err)
+
+				log.EXPECT().Error(err)
+				mock.ExpectRollback()
+
+				return &ProjectRepository{db: db, log: log, admin: admin}
+			},
+			expectedError: err,
+		},
+		{
+			name:         "Error cannot insert into projects_members",
+			newAdminData: &dto.NewAdminDto{ProjectID: 1, NewAdminID: 2},
+			userID:       1,
+			mockBehaviour: func(c *gomock.Controller, newAdminData *dto.NewAdminDto, adminID uint64) *ProjectRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+				admin := mock_repository.NewMockadmin(c)
+
+				admin.EXPECT().IsAdmin(newAdminData.ProjectID, adminID).Return(nil)
+
+				mock.ExpectBegin()
+				mock.ExpectExec(
+					regexp.QuoteMeta("UPDATE projects SET admin = $1 WHERE id = $2"),
+					).WithArgs(
+						newAdminData.NewAdminID,
+						newAdminData.ProjectID,
+				).WillReturnResult(sqlmock.NewResult(1, 1))
+
+				log.EXPECT().Infof("Set new admin = %d in project = %d", newAdminData.NewAdminID, newAdminData.ProjectID)
+
+				mock.ExpectExec(
+					regexp.QuoteMeta("DELETE FROM projects_members WHERE member_id = $1"),
+					).WithArgs(
+						newAdminData.NewAdminID,
+				).WillReturnResult(sqlmock.NewResult(1, 1))
+
+				mock.ExpectExec(
+					regexp.QuoteMeta("INSERT INTO projects_members (project_id, member_id) VALUES ($1, $2)"),
+					).WithArgs(
+						newAdminData.ProjectID,
+						adminID,
+				).WillReturnError(err)
+
+				log.EXPECT().Error(err)
+				mock.ExpectRollback()
+
+				return &ProjectRepository{db: db, log: log, admin: admin}
+			},
+			expectedError: err,
+		},
+		{
+			name:         "Error cannot commit transaction",
+			newAdminData: &dto.NewAdminDto{ProjectID: 1, NewAdminID: 2},
+			userID:       1,
+			mockBehaviour: func(c *gomock.Controller, newAdminData *dto.NewAdminDto, adminID uint64) *ProjectRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+				admin := mock_repository.NewMockadmin(c)
+
+				admin.EXPECT().IsAdmin(newAdminData.ProjectID, adminID).Return(nil)
+
+				mock.ExpectBegin()
+				mock.ExpectExec(
+					regexp.QuoteMeta("UPDATE projects SET admin = $1 WHERE id = $2"),
+					).WithArgs(
+						newAdminData.NewAdminID,
+						newAdminData.ProjectID,
+				).WillReturnResult(sqlmock.NewResult(1, 1))
+
+				log.EXPECT().Infof("Set new admin = %d in project = %d", newAdminData.NewAdminID, newAdminData.ProjectID)
+
+				mock.ExpectExec(
+					regexp.QuoteMeta("DELETE FROM projects_members WHERE member_id = $1"),
+					).WithArgs(
+						newAdminData.NewAdminID,
+				).WillReturnResult(sqlmock.NewResult(1, 1))
+
+				mock.ExpectExec(
+					regexp.QuoteMeta("INSERT INTO projects_members (project_id, member_id) VALUES ($1, $2)"),
+					).WithArgs(
+						newAdminData.ProjectID,
+						adminID,
+				).WillReturnResult(sqlmock.NewResult(1, 1))
+
+				mock.ExpectCommit().WillReturnError(err)
+				log.EXPECT().Error(err)
+
+				return &ProjectRepository{db: db, log: log, admin: admin}
+			},
+			expectedError: err,
+		},
+		{
+			name:         "OK",
+			newAdminData: &dto.NewAdminDto{ProjectID: 1, NewAdminID: 2},
+			userID:       1,
+			mockBehaviour: func(c *gomock.Controller, newAdminData *dto.NewAdminDto, adminID uint64) *ProjectRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+				admin := mock_repository.NewMockadmin(c)
+
+				admin.EXPECT().IsAdmin(newAdminData.ProjectID, adminID).Return(nil)
+
+				mock.ExpectBegin()
+				mock.ExpectExec(
+					regexp.QuoteMeta("UPDATE projects SET admin = $1 WHERE id = $2"),
+					).WithArgs(
+						newAdminData.NewAdminID,
+						newAdminData.ProjectID,
+				).WillReturnResult(sqlmock.NewResult(1, 1))
+
+				log.EXPECT().Infof("Set new admin = %d in project = %d", newAdminData.NewAdminID, newAdminData.ProjectID)
+
+				mock.ExpectExec(
+					regexp.QuoteMeta("DELETE FROM projects_members WHERE member_id = $1"),
+					).WithArgs(
+						newAdminData.NewAdminID,
+				).WillReturnResult(sqlmock.NewResult(1, 1))
+
+				mock.ExpectExec(
+					regexp.QuoteMeta("INSERT INTO projects_members (project_id, member_id) VALUES ($1, $2)"),
+					).WithArgs(
+						newAdminData.ProjectID,
+						adminID,
+				).WillReturnResult(sqlmock.NewResult(1, 1))
+
+				mock.ExpectCommit()
+
+				return &ProjectRepository{db: db, log: log, admin: admin}
+			},
+			expectedError: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			repo := test.mockBehaviour(c, test.newAdminData, test.userID)
+			err := repo.SetNewAdmin(test.newAdminData, test.userID)
 
 			require.Equal(t, test.expectedError, err)
 		})

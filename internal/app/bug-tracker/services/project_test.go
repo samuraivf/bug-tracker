@@ -332,3 +332,55 @@ func Test_LeaveProject(t *testing.T) {
 		})
 	}
 }
+
+func Test_SetNewAdmin(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, newAdminData *dto.NewAdminDto, userID uint64) *ProjectService
+	err := errors.New("error")
+
+	tests := []struct {
+		name          string
+		mockBehaviour mockBehaviour
+		newAdminData *dto.NewAdminDto
+		userID        uint64
+		expectedError error
+	}{
+		{
+			name: "Error",
+			mockBehaviour: func(c *gomock.Controller, newAdminData *dto.NewAdminDto, userID uint64) *ProjectService {
+				project := mock_repository.NewMockProject(c)
+
+				project.EXPECT().SetNewAdmin(newAdminData, userID).Return(err)
+
+				return &ProjectService{repo: repository.Repository{Project: project}}
+			},
+			newAdminData: &dto.NewAdminDto{ProjectID: 1, NewAdminID: 2},
+			userID:        1,
+			expectedError: err,
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, newAdminData *dto.NewAdminDto, userID uint64) *ProjectService {
+				project := mock_repository.NewMockProject(c)
+
+				project.EXPECT().SetNewAdmin(newAdminData, userID).Return(nil)
+
+				return &ProjectService{repo: repository.Repository{Project: project}}
+			},
+			newAdminData: &dto.NewAdminDto{ProjectID: 1, NewAdminID: 2},
+			userID:        1,
+			expectedError: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			service := test.mockBehaviour(c, test.newAdminData, test.userID)
+			err := service.SetNewAdmin(test.newAdminData, test.userID)
+
+			require.Equal(t, test.expectedError, err)
+		})
+	}
+}

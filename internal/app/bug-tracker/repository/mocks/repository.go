@@ -190,6 +190,20 @@ func (mr *MockProjectMockRecorder) LeaveProject(projectID, userID interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LeaveProject", reflect.TypeOf((*MockProject)(nil).LeaveProject), projectID, userID)
 }
 
+// SetNewAdmin mocks base method.
+func (m *MockProject) SetNewAdmin(newAdminData *dto.NewAdminDto, adminID uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetNewAdmin", newAdminData, adminID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetNewAdmin indicates an expected call of SetNewAdmin.
+func (mr *MockProjectMockRecorder) SetNewAdmin(newAdminData, adminID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNewAdmin", reflect.TypeOf((*MockProject)(nil).SetNewAdmin), newAdminData, adminID)
+}
+
 // UpdateProject mocks base method.
 func (m *MockProject) UpdateProject(projectData *dto.UpdateProjectDto, userID uint64) error {
 	m.ctrl.T.Helper()

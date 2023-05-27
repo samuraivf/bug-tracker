@@ -123,3 +123,23 @@ func (h *Handler) leaveProject(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, true)
 }
+
+func (h *Handler) setNewAdmin(c echo.Context) error {
+	newAdminData := new(dto.NewAdminDto)
+	userData, err := getUserData(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	if err := c.Bind(newAdminData); err != nil {
+		h.log.Error(err)
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidJSON))
+	}
+
+	err = h.service.Project.SetNewAdmin(newAdminData, userData.UserID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(err))
+	}
+
+	return c.JSON(http.StatusOK, true)
+}

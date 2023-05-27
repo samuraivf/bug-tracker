@@ -448,7 +448,7 @@ func Test_updateProject(t *testing.T) {
 			e.Validator = newValidator(validator)
 			e.PUT(id, handler.updateProject)
 
-			req := httptest.NewRequest(http.MethodDelete, update, strings.NewReader(test.projectDataJSON))
+			req := httptest.NewRequest(http.MethodPut, update, strings.NewReader(test.projectDataJSON))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 			echoCtx := e.NewContext(req, rec)
@@ -569,7 +569,7 @@ func Test_addMember(t *testing.T) {
 			e.Validator = newValidator(validator)
 			e.POST(addMember, handler.addMember)
 
-			req := httptest.NewRequest(http.MethodDelete, addMember, strings.NewReader(test.memberDataJSON))
+			req := httptest.NewRequest(http.MethodPost, addMember, strings.NewReader(test.memberDataJSON))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 			echoCtx := e.NewContext(req, rec)
@@ -703,6 +703,116 @@ func Test_leaveProject(t *testing.T) {
 			req.Close = true
 
 			require.NoError(t, handler.leaveProject(echoCtx))
+			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
+			require.Equal(t, test.expectedReturnBody, rec.Body.String())
+		})
+	}
+}
+
+func Test_setNewAdmin(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, newAdminData *dto.NewAdminDto, userID uint64) *Handler
+	err := errors.New("error")
+
+	tests := []struct {
+		name               string
+		mockBehaviour      mockBehaviour
+		newAdminData       *dto.NewAdminDto
+		newAdminDataJSON   string
+		userData           *services.TokenData
+		expectedStatusCode int
+		expectedReturnBody string
+	}{
+		{
+			name: "Error invalid user data",
+			mockBehaviour: func(c *gomock.Controller, newAdminData *dto.NewAdminDto, userID uint64) *Handler {
+				return &Handler{}
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errUserNotFound.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error invalid JSON",
+			mockBehaviour: func(c *gomock.Controller, newAdminData *dto.NewAdminDto, userID uint64) *Handler {
+				log := mock_log.NewMockLog(c)
+
+				log.EXPECT().Error(gomock.Any()).Return()
+
+				return &Handler{log: log}
+			},
+			userData:           &services.TokenData{UserID: 1},
+			newAdminDataJSON:   "{invalid}",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errInvalidJSON.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error cannot set new admin",
+			mockBehaviour: func(c *gomock.Controller, newAdminData *dto.NewAdminDto, userID uint64) *Handler {
+				project := mock_services.NewMockProject(c)
+
+				project.EXPECT().SetNewAdmin(newAdminData, userID).Return(err)
+
+				serv := &services.Service{Project: project}
+
+				return &Handler{serv, nil, nil, nil}
+			},
+			newAdminData:     &dto.NewAdminDto{ProjectID: 1, NewAdminID: 2},
+			newAdminDataJSON: `{"projectId": 1, "newAdminId": 2}`,
+			userData: &services.TokenData{
+				UserID: 1,
+			},
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedReturnBody: `{"message":"` + err.Error() + `"}` + "\n",
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, newAdminData *dto.NewAdminDto, userID uint64) *Handler {
+				project := mock_services.NewMockProject(c)
+
+				project.EXPECT().SetNewAdmin(newAdminData, userID).Return(nil)
+
+				serv := &services.Service{Project: project}
+
+				return &Handler{serv, nil, nil, nil}
+			},
+			newAdminData:     &dto.NewAdminDto{ProjectID: 1, NewAdminID: 2},
+			newAdminDataJSON: `{"projectId": 1, "newAdminId": 2}`,
+			userData: &services.TokenData{
+				UserID: 1,
+			},
+			expectedStatusCode: http.StatusOK,
+			expectedReturnBody: `true` + "\n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			userID := uint64(0)
+			if test.userData != nil {
+				userID = test.userData.UserID
+			}
+
+			handler := test.mockBehaviour(c, test.newAdminData, userID)
+
+			e := echo.New()
+			defer e.Close()
+
+			validator := validator.New()
+			e.Validator = newValidator(validator)
+			e.POST(setAdmin, handler.setNewAdmin)
+
+			req := httptest.NewRequest(http.MethodPost, addMember, strings.NewReader(test.newAdminDataJSON))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			echoCtx := e.NewContext(req, rec)
+			echoCtx.Set(userDataCtx, test.userData)
+
+			defer rec.Result().Body.Close()
+			req.Close = true
+
+			require.NoError(t, handler.setNewAdmin(echoCtx))
 			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
 			require.Equal(t, test.expectedReturnBody, rec.Body.String())
 		})

@@ -37,3 +37,7 @@ func (s *ProjectService) AddMember(memberData *dto.AddMemberDto, userID uint64) 
 func (s *ProjectService) LeaveProject(projectID, userID uint64) error {
 	return s.repo.LeaveProject(projectID, userID)
 }
+
+func (s *ProjectService) SetNewAdmin(newAdminData *dto.NewAdminDto, adminID uint64) error {
+	return s.repo.SetNewAdmin(newAdminData, adminID)
+}
