@@ -11,10 +11,11 @@ const (
 	verify   = "/verify-email"
 	setEmail = "/set-email"
 
-	project   = "/project"
-	create    = "/create"
-	update    = "/update"
-	addMember = "/add-member"
-	leave     = "/leave/:id"
-	setAdmin  = "/set-admin"
+	project      = "/project"
+	create       = "/create"
+	update       = "/update"
+	addMember    = "/add-member"
+	deleteMember = "/member"
+	leave        = "/leave/:id"
+	setAdmin     = "/set-admin"
 )

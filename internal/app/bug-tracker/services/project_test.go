@@ -281,6 +281,58 @@ func Test_AddMember(t *testing.T) {
 	}
 }
 
+func Test_DeleteMember(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, memberData *dto.AddMemberDto, userID uint64) *ProjectService
+	err := errors.New("error")
+
+	tests := []struct {
+		name          string
+		mockBehaviour mockBehaviour
+		memberData    *dto.AddMemberDto
+		userID        uint64
+		expectedError error
+	}{
+		{
+			name: "Error",
+			mockBehaviour: func(c *gomock.Controller, memberData *dto.AddMemberDto, userID uint64) *ProjectService {
+				project := mock_repository.NewMockProject(c)
+
+				project.EXPECT().DeleteMember(memberData, userID).Return(err)
+
+				return &ProjectService{repo: repository.Repository{Project: project}}
+			},
+			memberData:    &dto.AddMemberDto{ProjectID: 1, MemberID: 2},
+			userID:        1,
+			expectedError: err,
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, memberData *dto.AddMemberDto, userID uint64) *ProjectService {
+				project := mock_repository.NewMockProject(c)
+
+				project.EXPECT().DeleteMember(memberData, userID).Return(nil)
+
+				return &ProjectService{repo: repository.Repository{Project: project}}
+			},
+			memberData:    &dto.AddMemberDto{ProjectID: 1, MemberID: 2},
+			userID:        1,
+			expectedError: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			service := test.mockBehaviour(c, test.memberData, test.userID)
+			err := service.DeleteMember(test.memberData, test.userID)
+
+			require.Equal(t, test.expectedError, err)
+		})
+	}
+}
+
 func Test_LeaveProject(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, projectID, userID uint64) *ProjectService
 	err := errors.New("error")

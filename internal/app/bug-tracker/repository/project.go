@@ -108,12 +108,32 @@ func (r *ProjectRepository) AddMember(memberData *dto.AddMemberDto, userID uint6
 	return err
 }
 
+func (r *ProjectRepository) DeleteMember(memberData *dto.AddMemberDto, userID uint64) error {
+	if err := r.admin.IsAdmin(memberData.ProjectID, userID); err != nil {
+		return err
+	}
+
+	_, err := r.db.Exec(
+		"DELETE FROM projects_members WHERE project_id = $1 AND member_id = $2",
+		memberData.ProjectID,
+		memberData.MemberID,
+	)
+
+	if err != nil {
+		r.log.Error(err)
+		return err
+	}
+	r.log.Infof("Delete member with id=%d from project with id=%d", memberData.MemberID, memberData.ProjectID)
+
+	return nil
+}
+
 func (r *ProjectRepository) LeaveProject(projectID, userID uint64) error {
 	if err := r.admin.IsAdmin(projectID, userID); err == nil {
 		return ErrNoRights
 	}
 
-	_, err := r.db.Exec("DELETE FROM projects_members WHERE member_id = $1", userID)
+	_, err := r.db.Exec("DELETE FROM projects_members WHERE project_id = $1 AND member_id = $2", projectID, userID)
 	if err != nil {
 		r.log.Error(err)
 	}
@@ -139,7 +159,7 @@ func (r *ProjectRepository) SetNewAdmin(newAdminData *dto.NewAdminDto, adminID u
 	}
 	r.log.Infof("Set new admin = %d in project = %d", newAdminData.NewAdminID, newAdminData.ProjectID)
 
-	_, err = tx.Exec("DELETE FROM projects_members WHERE member_id = $1", newAdminData.NewAdminID)
+	_, err = tx.Exec("DELETE FROM projects_members WHERE project_id = $1 AND member_id = $2", newAdminData.ProjectID, newAdminData.NewAdminID)
 	if err != nil {
 		r.log.Error(err)
 		tx.Rollback()

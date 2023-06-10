@@ -371,6 +371,20 @@ func (mr *MockProjectMockRecorder) CreateProject(projectData interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateProject", reflect.TypeOf((*MockProject)(nil).CreateProject), projectData)
 }
 
+// DeleteMember mocks base method.
+func (m *MockProject) DeleteMember(memberData *dto.AddMemberDto, userID uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteMember", memberData, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteMember indicates an expected call of DeleteMember.
+func (mr *MockProjectMockRecorder) DeleteMember(memberData, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMember", reflect.TypeOf((*MockProject)(nil).DeleteMember), memberData, userID)
+}
+
 // DeleteProject mocks base method.
 func (m *MockProject) DeleteProject(projectID, userID uint64) error {
 	m.ctrl.T.Helper()

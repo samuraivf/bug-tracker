@@ -527,7 +527,7 @@ func Test_addMember(t *testing.T) {
 				UserID: 1,
 			},
 			expectedStatusCode: http.StatusInternalServerError,
-			expectedReturnBody: `{"message":"` + errInternalServerError.Error() + `"}` + "\n",
+			expectedReturnBody: `{"message":"` + err.Error() + `"}` + "\n",
 		},
 		{
 			name: "OK",
@@ -579,6 +579,127 @@ func Test_addMember(t *testing.T) {
 			req.Close = true
 
 			require.NoError(t, handler.addMember(echoCtx))
+			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
+			require.Equal(t, test.expectedReturnBody, rec.Body.String())
+		})
+	}
+}
+
+func Test_deleteMember(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, memberData *dto.AddMemberDto, userID uint64) *Handler
+	err := errors.New("error")
+
+	tests := []struct {
+		name               string
+		mockBehaviour      mockBehaviour
+		memberData         *dto.AddMemberDto
+		memberDataJSON     string
+		userData           *services.TokenData
+		expectedStatusCode int
+		expectedReturnBody string
+	}{
+		{
+			name: "Error invalid user data",
+			mockBehaviour: func(c *gomock.Controller, memberData *dto.AddMemberDto, userID uint64) *Handler {
+				return &Handler{}
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errUserNotFound.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error invalid JSON",
+			mockBehaviour: func(c *gomock.Controller, memberData *dto.AddMemberDto, userID uint64) *Handler {
+				log := mock_log.NewMockLog(c)
+
+				log.EXPECT().Error(gomock.Any()).Return()
+
+				return &Handler{log: log}
+			},
+			userData:           &services.TokenData{UserID: 1},
+			memberDataJSON:     "{invalid}",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errInvalidJSON.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error memberID == adminID",
+			mockBehaviour: func(c *gomock.Controller, memberData *dto.AddMemberDto, userID uint64) *Handler {
+				return &Handler{}
+			},
+			userData:           &services.TokenData{UserID: 1},
+			memberDataJSON:     `{"projectId": 1, "memberId": 1}`,
+			memberData:         &dto.AddMemberDto{ProjectID: 1, MemberID: 1},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errInvalidOperation.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error cannot delete member from project",
+			mockBehaviour: func(c *gomock.Controller, memberData *dto.AddMemberDto, userID uint64) *Handler {
+				project := mock_services.NewMockProject(c)
+
+				project.EXPECT().DeleteMember(memberData, userID).Return(err)
+
+				serv := &services.Service{Project: project}
+
+				return &Handler{serv, nil, nil, nil}
+			},
+			memberData:     &dto.AddMemberDto{MemberID: 2, ProjectID: 1},
+			memberDataJSON: `{"projectId": 1, "memberId": 2}`,
+			userData: &services.TokenData{
+				UserID: 1,
+			},
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedReturnBody: `{"message":"` + err.Error() + `"}` + "\n",
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, memberData *dto.AddMemberDto, userID uint64) *Handler {
+				project := mock_services.NewMockProject(c)
+
+				project.EXPECT().DeleteMember(memberData, userID).Return(nil)
+
+				serv := &services.Service{Project: project}
+
+				return &Handler{serv, nil, nil, nil}
+			},
+			memberData:     &dto.AddMemberDto{MemberID: 2, ProjectID: 1},
+			memberDataJSON: `{"projectId": 1, "memberId": 2}`,
+			userData: &services.TokenData{
+				UserID: 1,
+			},
+			expectedStatusCode: http.StatusOK,
+			expectedReturnBody: `true` + "\n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			userID := uint64(0)
+			if test.userData != nil {
+				userID = test.userData.UserID
+			}
+
+			handler := test.mockBehaviour(c, test.memberData, userID)
+
+			e := echo.New()
+			defer e.Close()
+
+			validator := validator.New()
+			e.Validator = newValidator(validator)
+			e.DELETE(deleteMember, handler.deleteMember)
+
+			req := httptest.NewRequest(http.MethodDelete, deleteMember, strings.NewReader(test.memberDataJSON))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			echoCtx := e.NewContext(req, rec)
+			echoCtx.Set(userDataCtx, test.userData)
+
+			defer rec.Result().Body.Close()
+			req.Close = true
+
+			require.NoError(t, handler.deleteMember(echoCtx))
 			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
 			require.Equal(t, test.expectedReturnBody, rec.Body.String())
 		})

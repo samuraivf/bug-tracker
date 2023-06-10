@@ -389,6 +389,87 @@ func Test_AddMember(t *testing.T) {
 	}
 }
 
+func Test_DeleteMember(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, memberData *dto.AddMemberDto, userID uint64) *ProjectRepository
+	err := errors.New("error")
+
+	tests := []struct {
+		name          string
+		memberData    *dto.AddMemberDto
+		userID        uint64
+		mockBehaviour mockBehaviour
+		expectedError error
+	}{
+		{
+			name:       "Error in admin",
+			memberData: &dto.AddMemberDto{ProjectID: 1, MemberID: 2},
+			userID:     1,
+			mockBehaviour: func(c *gomock.Controller, memberData *dto.AddMemberDto, userID uint64) *ProjectRepository {
+				admin := mock_repository.NewMockadmin(c)
+
+				admin.EXPECT().IsAdmin(memberData.ProjectID, userID).Return(err)
+
+				return &ProjectRepository{admin: admin}
+			},
+			expectedError: err,
+		},
+		{
+			name:       "Error cannot delete member from project",
+			memberData: &dto.AddMemberDto{ProjectID: 1, MemberID: 2},
+			userID:     1,
+			mockBehaviour: func(c *gomock.Controller, memberData *dto.AddMemberDto, userID uint64) *ProjectRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+				admin := mock_repository.NewMockadmin(c)
+
+				admin.EXPECT().IsAdmin(memberData.ProjectID, userID).Return(nil)
+
+				mock.ExpectExec(
+					regexp.QuoteMeta("DELETE FROM projects_members WHERE project_id = $1 AND member_id = $2"),
+				).WithArgs(memberData.ProjectID, memberData.MemberID).WillReturnError(err)
+
+				log.EXPECT().Error(err).Return()
+
+				return &ProjectRepository{db: db, log: log, admin: admin}
+			},
+			expectedError: err,
+		},
+		{
+			name:       "OK",
+			memberData: &dto.AddMemberDto{ProjectID: 1, MemberID: 2},
+			userID:     1,
+			mockBehaviour: func(c *gomock.Controller, memberData *dto.AddMemberDto, userID uint64) *ProjectRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+				admin := mock_repository.NewMockadmin(c)
+
+				admin.EXPECT().IsAdmin(memberData.ProjectID, userID).Return(nil)
+
+				mock.ExpectExec(
+					regexp.QuoteMeta("DELETE FROM projects_members WHERE project_id = $1 AND member_id = $2"),
+				).WithArgs(memberData.ProjectID, memberData.MemberID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+				log.EXPECT().Infof("Delete member with id=%d from project with id=%d", memberData.MemberID, memberData.ProjectID)
+
+				return &ProjectRepository{db: db, log: log, admin: admin}
+			},
+			expectedError: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			repo := test.mockBehaviour(c, test.memberData, test.userID)
+			err := repo.DeleteMember(test.memberData, test.userID)
+
+			require.Equal(t, test.expectedError, err)
+		})
+	}
+}
+
 func Test_LeaveProject(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, projectID, userID uint64) *ProjectRepository
 	err := errors.New("error")
@@ -425,8 +506,8 @@ func Test_LeaveProject(t *testing.T) {
 				admin.EXPECT().IsAdmin(projectID, userID).Return(err)
 
 				mock.ExpectExec(
-					regexp.QuoteMeta("DELETE FROM projects_members WHERE member_id = $1"),
-				).WithArgs(userID).WillReturnError(err)
+					regexp.QuoteMeta("DELETE FROM projects_members WHERE project_id = $1 AND member_id = $2"),
+				).WithArgs(projectID, userID).WillReturnError(err)
 
 				log.EXPECT().Error(err).Return()
 
@@ -445,8 +526,8 @@ func Test_LeaveProject(t *testing.T) {
 				admin.EXPECT().IsAdmin(projectID, userID).Return(err)
 
 				mock.ExpectExec(
-					regexp.QuoteMeta("DELETE FROM projects_members WHERE member_id = $1"),
-				).WithArgs(userID).WillReturnResult(sqlmock.NewResult(1, 1))
+					regexp.QuoteMeta("DELETE FROM projects_members WHERE project_id = $1 AND member_id = $2"),
+				).WithArgs(projectID, userID).WillReturnResult(sqlmock.NewResult(1, 1))
 
 				return &ProjectRepository{db: db, log: nil, admin: admin}
 			},
@@ -556,8 +637,9 @@ func Test_SetNewAdmin(t *testing.T) {
 				log.EXPECT().Infof("Set new admin = %d in project = %d", newAdminData.NewAdminID, newAdminData.ProjectID)
 
 				mock.ExpectExec(
-					regexp.QuoteMeta("DELETE FROM projects_members WHERE member_id = $1"),
+					regexp.QuoteMeta("DELETE FROM projects_members WHERE project_id = $1 AND member_id = $2"),
 				).WithArgs(
+					newAdminData.ProjectID,
 					newAdminData.NewAdminID,
 				).WillReturnError(err)
 
@@ -590,8 +672,9 @@ func Test_SetNewAdmin(t *testing.T) {
 				log.EXPECT().Infof("Set new admin = %d in project = %d", newAdminData.NewAdminID, newAdminData.ProjectID)
 
 				mock.ExpectExec(
-					regexp.QuoteMeta("DELETE FROM projects_members WHERE member_id = $1"),
+					regexp.QuoteMeta("DELETE FROM projects_members WHERE project_id = $1 AND member_id = $2"),
 				).WithArgs(
+					newAdminData.ProjectID,
 					newAdminData.NewAdminID,
 				).WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -631,8 +714,9 @@ func Test_SetNewAdmin(t *testing.T) {
 				log.EXPECT().Infof("Set new admin = %d in project = %d", newAdminData.NewAdminID, newAdminData.ProjectID)
 
 				mock.ExpectExec(
-					regexp.QuoteMeta("DELETE FROM projects_members WHERE member_id = $1"),
+					regexp.QuoteMeta("DELETE FROM projects_members WHERE project_id = $1 AND member_id = $2"),
 				).WithArgs(
+					newAdminData.ProjectID,
 					newAdminData.NewAdminID,
 				).WillReturnResult(sqlmock.NewResult(1, 1))
 
@@ -672,8 +756,9 @@ func Test_SetNewAdmin(t *testing.T) {
 				log.EXPECT().Infof("Set new admin = %d in project = %d", newAdminData.NewAdminID, newAdminData.ProjectID)
 
 				mock.ExpectExec(
-					regexp.QuoteMeta("DELETE FROM projects_members WHERE member_id = $1"),
+					regexp.QuoteMeta("DELETE FROM projects_members WHERE project_id = $1 AND member_id = $2"),
 				).WithArgs(
+					newAdminData.ProjectID,
 					newAdminData.NewAdminID,
 				).WillReturnResult(sqlmock.NewResult(1, 1))
 
