@@ -28,14 +28,20 @@ type Project interface {
 	SetNewAdmin(newAdminData *dto.NewAdminDto, adminID uint64) error
 }
 
+type Task interface {
+	CreateTask(taskData *dto.CreateTaskDto) (uint64, error)
+}
+
 type Repository struct {
 	User
 	Project
+	Task
 }
 
 func NewRepository(db *sql.DB, log log.Log) *Repository {
 	return &Repository{
 		User:    NewUserRepo(db, log),
 		Project: NewProjectRepo(db, log),
+		Task:    NewTaskRepo(db, log),
 	}
 }

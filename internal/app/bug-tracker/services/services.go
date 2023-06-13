@@ -48,11 +48,16 @@ type Project interface {
 	SetNewAdmin(newAdmintData *dto.NewAdminDto, adminID uint64) error
 }
 
+type Task interface {
+	CreateTask(taskData *dto.CreateTaskDto) (uint64, error)
+}
+
 type Service struct {
 	Auth
 	User
 	Redis
 	Project
+	Task
 }
 
 func NewService(repo *repository.Repository, redisRepo redis.Redis) *Service {
@@ -61,5 +66,6 @@ func NewService(repo *repository.Repository, redisRepo redis.Redis) *Service {
 		User:    NewUser(repo.User),
 		Redis:   NewRedis(redisRepo),
 		Project: NewProject(repo.Project),
+		Task:    NewTask(repo.Task),
 	}
 }

@@ -22,4 +22,6 @@ var (
 	errProjectNotFound    = errors.New("error project is not found")
 	errInvalidOperation   = errors.New("error invalid operation")
 	errInvalidParam       = errors.New("error invalid param")
+
+	errInvalidTaskData = errors.New("error invalid task data")
 )

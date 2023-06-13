@@ -31,5 +31,10 @@ func setRoutes(e *echo.Echo, h *Handler) *echo.Echo {
 		project.POST(setAdmin, h.setNewAdmin)
 	}
 
+	task := e.Group(task, h.isAuthorized)
+	{
+		task.POST(create, h.createTask)
+	}
+
 	return e
 }
