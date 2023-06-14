@@ -16,10 +16,20 @@ func Test_NewService(t *testing.T) {
 	defer c.Finish()
 
 	auth := NewAuth()
-	repo := &repository.Repository{User: mock_repository.NewMockUser(c), Project: mock_repository.NewMockProject(c)}
+	repo := &repository.Repository{
+		User:    mock_repository.NewMockUser(c),
+		Project: mock_repository.NewMockProject(c),
+		Task:    mock_repository.NewMockTask(c),
+	}
 	redis := mock_redis.NewMockRedis(c)
 
-	expected := &Service{Auth: auth, Redis: NewRedis(redis), User: NewUser(repo.User), Project: NewProject(repo.Project)}
+	expected := &Service{
+		Auth:    auth,
+		Redis:   NewRedis(redis),
+		User:    NewUser(repo.User),
+		Project: NewProject(repo.Project),
+		Task:    NewTask(repo.Task),
+	}
 
 	require.Equal(t, expected, NewService(repo, redis))
 }

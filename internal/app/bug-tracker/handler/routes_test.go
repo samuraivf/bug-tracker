@@ -38,6 +38,11 @@ func Test_setRoutes(t *testing.T) {
 		project.POST(setAdmin, h.setNewAdmin)
 	}
 
+	task := expected.Group(task, h.isAuthorized)
+	{
+		task.POST(create, h.createTask)
+	}
+
 	e = setRoutes(e, h)
 
 	require.Equal(t, len(expected.Routes()), len(e.Routes()))

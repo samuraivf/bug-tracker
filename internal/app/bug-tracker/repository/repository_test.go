@@ -16,7 +16,11 @@ func Test_NewRepository(t *testing.T) {
 	defer c.Finish()
 
 	log := mock_log.NewMockLog(c)
-	expectedRepo := &Repository{User: NewUserRepo(db, log), Project: NewProjectRepo(db, log)}
+	expectedRepo := &Repository{
+		User:    NewUserRepo(db, log),
+		Project: NewProjectRepo(db, log),
+		Task:    NewTaskRepo(db, log),
+	}
 	repo := NewRepository(db, log)
 
 	require.Equal(t, expectedRepo, repo)
