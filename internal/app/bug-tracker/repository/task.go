@@ -9,26 +9,33 @@ import (
 )
 
 type TaskRepository struct {
-	db  *sql.DB
-	log log.Log
+	db    *sql.DB
+	log   log.Log
+	admin admin
 }
 
-func NewTaskRepo(db *sql.DB, log log.Log) Task {
+func NewTaskRepo(db *sql.DB, log log.Log, admin admin) Task {
 	return &TaskRepository{
-		db:  db,
-		log: log,
+		db:    db,
+		log:   log,
+		admin: admin,
 	}
 }
 
-func (r *TaskRepository) CreateTask(taskData *dto.CreateTaskDto) (uint64, error) {
+func (r *TaskRepository) CreateTask(taskData *dto.CreateTaskDto, userID uint64) (uint64, error) {
+	if err := r.admin.IsAdmin(taskData.ProjectID, userID); err != nil {
+		return 0, err
+	}
+
 	result := r.db.QueryRow(
-		"INSERT INTO tasks (name, description, task_priority, project_id, task_type, created_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+		"INSERT INTO tasks (name, description, task_priority, project_id, task_type, created_at, perform_to) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
 		taskData.Name,
 		taskData.Description,
 		taskData.TaskPriority,
 		taskData.ProjectID,
 		taskData.TaskType,
 		time.Now(),
+		taskData.PerformTo,
 	)
 
 	var taskID uint64

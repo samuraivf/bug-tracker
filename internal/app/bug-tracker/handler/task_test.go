@@ -19,7 +19,7 @@ import (
 )
 
 func Test_createTask(t *testing.T) {
-	type mockBehaviour func(c *gomock.Controller, taskData *dto.CreateTaskDto) *Handler
+	type mockBehaviour func(c *gomock.Controller, taskData *dto.CreateTaskDto, userID uint64) *Handler
 	err := errors.New("error")
 
 	tests := []struct {
@@ -27,12 +27,21 @@ func Test_createTask(t *testing.T) {
 		mockBehaviour      mockBehaviour
 		taskData           *dto.CreateTaskDto
 		taskDataJSON       string
+		userData           *services.TokenData
 		expectedStatusCode int
 		expectedReturnBody string
 	}{
 		{
+			name: "Error invalid user data",
+			mockBehaviour: func(c *gomock.Controller, taskData *dto.CreateTaskDto, userID uint64) *Handler {
+				return &Handler{}
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errUserNotFound.Error() + `"}` + "\n",
+		},
+		{
 			name: "Error invalid json",
-			mockBehaviour: func(c *gomock.Controller, taskData *dto.CreateTaskDto) *Handler {
+			mockBehaviour: func(c *gomock.Controller, taskData *dto.CreateTaskDto, userID uint64) *Handler {
 				log := mock_log.NewMockLog(c)
 
 				log.EXPECT().Error(gomock.Any()).Return()
@@ -41,12 +50,13 @@ func Test_createTask(t *testing.T) {
 			},
 			taskData:           nil,
 			taskDataJSON:       `{"invalid"}`,
+			userData:           &services.TokenData{UserID: 1},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedReturnBody: `{"message":"` + errInvalidJSON.Error() + `"}` + "\n",
 		},
 		{
 			name: "Error invalid create task data",
-			mockBehaviour: func(c *gomock.Controller, taskData *dto.CreateTaskDto) *Handler {
+			mockBehaviour: func(c *gomock.Controller, taskData *dto.CreateTaskDto, userID uint64) *Handler {
 				log := mock_log.NewMockLog(c)
 
 				log.EXPECT().Error(gomock.Any()).Return()
@@ -55,15 +65,16 @@ func Test_createTask(t *testing.T) {
 			},
 			taskData:           nil,
 			taskDataJSON:       `{"name": "N"}`,
+			userData:           &services.TokenData{UserID: 1},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedReturnBody: `{"message":"` + errInvalidTaskData.Error() + `"}` + "\n",
 		},
 		{
 			name: "Error cannot create task",
-			mockBehaviour: func(c *gomock.Controller, taskData *dto.CreateTaskDto) *Handler {
+			mockBehaviour: func(c *gomock.Controller, taskData *dto.CreateTaskDto, userID uint64) *Handler {
 				task := mock_services.NewMockTask(c)
 
-				task.EXPECT().CreateTask(taskData).Return(uint64(0), err)
+				task.EXPECT().CreateTask(taskData, userID).Return(uint64(0), err)
 
 				serv := &services.Service{Task: task}
 
@@ -77,15 +88,16 @@ func Test_createTask(t *testing.T) {
 				TaskType:     "TO DO",
 			},
 			taskDataJSON:       `{"name": "name", "description": "description", "taskPriority": "high", "projectId": 1, "taskType": "TO DO"}`,
+			userData:           &services.TokenData{UserID: 1},
 			expectedStatusCode: http.StatusInternalServerError,
 			expectedReturnBody: `{"message":"` + err.Error() + `"}` + "\n",
 		},
 		{
 			name: "OK",
-			mockBehaviour: func(c *gomock.Controller, taskData *dto.CreateTaskDto) *Handler {
+			mockBehaviour: func(c *gomock.Controller, taskData *dto.CreateTaskDto, userID uint64) *Handler {
 				task := mock_services.NewMockTask(c)
 
-				task.EXPECT().CreateTask(taskData).Return(uint64(1), nil)
+				task.EXPECT().CreateTask(taskData, userID).Return(uint64(1), nil)
 
 				serv := &services.Service{Task: task}
 
@@ -99,6 +111,7 @@ func Test_createTask(t *testing.T) {
 				TaskType:     "TO DO",
 			},
 			taskDataJSON:       `{"name": "name", "description": "description", "taskPriority": "high", "projectId": 1, "taskType": "TO DO"}`,
+			userData:           &services.TokenData{UserID: 1},
 			expectedStatusCode: http.StatusOK,
 			expectedReturnBody: "1" + "\n",
 		},
@@ -109,7 +122,12 @@ func Test_createTask(t *testing.T) {
 			c := gomock.NewController(t)
 			defer c.Finish()
 
-			handler := test.mockBehaviour(c, test.taskData)
+			userID := uint64(0)
+			if test.userData != nil {
+				userID = test.userData.UserID
+			}
+
+			handler := test.mockBehaviour(c, test.taskData, userID)
 
 			e := echo.New()
 			defer e.Close()
@@ -122,6 +140,7 @@ func Test_createTask(t *testing.T) {
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 			echoCtx := e.NewContext(req, rec)
+			echoCtx.Set(userDataCtx, test.userData)
 
 			defer rec.Result().Body.Close()
 			req.Close = true

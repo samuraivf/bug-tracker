@@ -9,6 +9,10 @@ import (
 
 func (h *Handler) createTask(c echo.Context) error {
 	taskData := new(dto.CreateTaskDto)
+	userData, err := getUserData(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
 
 	if err := c.Bind(taskData); err != nil {
 		h.log.Error(err)
@@ -20,7 +24,7 @@ func (h *Handler) createTask(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidTaskData))
 	}
 
-	id, err := h.service.Task.CreateTask(taskData)
+	id, err := h.service.Task.CreateTask(taskData, userData.UserID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, newErrorMessage(err))
 	}

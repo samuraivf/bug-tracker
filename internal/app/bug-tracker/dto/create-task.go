@@ -6,4 +6,5 @@ type CreateTaskDto struct {
 	TaskPriority string `json:"taskPriority" validate:"required"`
 	ProjectID    uint64 `json:"projectId" validate:"required"`
 	TaskType     string `json:"taskType" validate:"required"`
+	PerformTo    string `json:"performTo"`
 }

@@ -49,7 +49,7 @@ type Project interface {
 }
 
 type Task interface {
-	CreateTask(taskData *dto.CreateTaskDto) (uint64, error)
+	CreateTask(taskData *dto.CreateTaskDto, userID uint64) (uint64, error)
 }
 
 type Service struct {

@@ -480,16 +480,16 @@ func (m *MockTask) EXPECT() *MockTaskMockRecorder {
 }
 
 // CreateTask mocks base method.
-func (m *MockTask) CreateTask(taskData *dto.CreateTaskDto) (uint64, error) {
+func (m *MockTask) CreateTask(taskData *dto.CreateTaskDto, userID uint64) (uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateTask", taskData)
+	ret := m.ctrl.Call(m, "CreateTask", taskData, userID)
 	ret0, _ := ret[0].(uint64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateTask indicates an expected call of CreateTask.
-func (mr *MockTaskMockRecorder) CreateTask(taskData interface{}) *gomock.Call {
+func (mr *MockTaskMockRecorder) CreateTask(taskData, userID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTask", reflect.TypeOf((*MockTask)(nil).CreateTask), taskData)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTask", reflect.TypeOf((*MockTask)(nil).CreateTask), taskData, userID)
 }

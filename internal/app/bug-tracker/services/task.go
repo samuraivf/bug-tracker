@@ -13,6 +13,6 @@ func NewTask(repo repository.Task) Task {
 	return &TaskService{repo: repo}
 }
 
-func (s *TaskService) CreateTask(taskData *dto.CreateTaskDto) (uint64, error) {
-	return s.repo.CreateTask(taskData)
+func (s *TaskService) CreateTask(taskData *dto.CreateTaskDto, userID uint64) (uint64, error) {
+	return s.repo.CreateTask(taskData, userID)
 }

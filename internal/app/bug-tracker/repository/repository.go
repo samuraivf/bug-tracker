@@ -29,7 +29,7 @@ type Project interface {
 }
 
 type Task interface {
-	CreateTask(taskData *dto.CreateTaskDto) (uint64, error)
+	CreateTask(taskData *dto.CreateTaskDto, userID uint64) (uint64, error)
 }
 
 type Repository struct {
@@ -39,9 +39,11 @@ type Repository struct {
 }
 
 func NewRepository(db *sql.DB, log log.Log) *Repository {
+	admin := new_adminStrategy(db, log)
+
 	return &Repository{
 		User:    NewUserRepo(db, log),
-		Project: NewProjectRepo(db, log),
-		Task:    NewTaskRepo(db, log),
+		Project: NewProjectRepo(db, log, admin),
+		Task:    NewTaskRepo(db, log, admin),
 	}
 }

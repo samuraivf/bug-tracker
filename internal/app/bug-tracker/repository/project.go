@@ -19,11 +19,11 @@ type ProjectRepository struct {
 	admin admin
 }
 
-func NewProjectRepo(db *sql.DB, log log.Log) Project {
+func NewProjectRepo(db *sql.DB, log log.Log, admin admin) Project {
 	return &ProjectRepository{
 		db:    db,
 		log:   log,
-		admin: new_adminStrategy(db, log),
+		admin: admin,
 	}
 }
 
