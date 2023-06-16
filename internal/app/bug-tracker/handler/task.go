@@ -31,3 +31,22 @@ func (h *Handler) createTask(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, id)
 }
+
+func (h *Handler) workOnTask(c echo.Context) error {
+	userData, err := getUserData(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	taskID, err := h.params.GetIdParam(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	err = h.service.WorkOnTask(taskID, userData.UserID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(err))
+	}
+
+	return c.JSON(http.StatusOK, true)
+}

@@ -19,5 +19,6 @@ const (
 	leave        = "/leave/:id"
 	setAdmin     = "/set-admin"
 
-	task = "/task"
+	task       = "/task"
+	workOnTask = "/work-on-task/:id"
 )

@@ -47,3 +47,13 @@ func (r *TaskRepository) CreateTask(taskData *dto.CreateTaskDto, userID uint64) 
 
 	return taskID, nil
 }
+
+func (r *TaskRepository) WorkOnTask(taskID, userID uint64) error {
+	_, err := r.db.Exec("UPDATE tasks SET assignee = $1 WHERE id = $2", userID, taskID)
+	if err != nil {
+		r.log.Error(err)
+		return err
+	}
+
+	return nil
+}

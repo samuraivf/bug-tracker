@@ -16,3 +16,7 @@ func NewTask(repo repository.Task) Task {
 func (s *TaskService) CreateTask(taskData *dto.CreateTaskDto, userID uint64) (uint64, error) {
 	return s.repo.CreateTask(taskData, userID)
 }
+
+func (s *TaskService) WorkOnTask(taskID, userID uint64) error {
+	return s.repo.WorkOnTask(taskID, userID)
+}

@@ -34,6 +34,7 @@ func setRoutes(e *echo.Echo, h *Handler) *echo.Echo {
 	task := e.Group(task, h.isAuthorized)
 	{
 		task.POST(create, h.createTask)
+		task.POST(workOnTask, h.workOnTask)
 	}
 
 	return e

@@ -493,3 +493,17 @@ func (mr *MockTaskMockRecorder) CreateTask(taskData, userID interface{}) *gomock
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTask", reflect.TypeOf((*MockTask)(nil).CreateTask), taskData, userID)
 }
+
+// WorkOnTask mocks base method.
+func (m *MockTask) WorkOnTask(taskID, userID uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkOnTask", taskID, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WorkOnTask indicates an expected call of WorkOnTask.
+func (mr *MockTaskMockRecorder) WorkOnTask(taskID, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkOnTask", reflect.TypeOf((*MockTask)(nil).WorkOnTask), taskID, userID)
+}
