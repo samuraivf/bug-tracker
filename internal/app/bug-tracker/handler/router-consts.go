@@ -20,5 +20,5 @@ const (
 	setAdmin     = "/set-admin"
 
 	task       = "/task"
-	workOnTask = "/work-on-task/:id"
+	workOnTask = "/work-on-task"
 )

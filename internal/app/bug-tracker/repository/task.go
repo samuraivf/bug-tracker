@@ -48,8 +48,18 @@ func (r *TaskRepository) CreateTask(taskData *dto.CreateTaskDto, userID uint64) 
 	return taskID, nil
 }
 
-func (r *TaskRepository) WorkOnTask(taskID, userID uint64) error {
-	_, err := r.db.Exec("UPDATE tasks SET assignee = $1 WHERE id = $2", userID, taskID)
+func (r *TaskRepository) WorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID uint64) error {
+	result := r.db.QueryRow(
+		"SELECT member_id FROM projects_members WHERE project_id = $1 AND member_id = $2",
+		workOnTaskData.ProjectID,
+		userID,
+	)
+	memberId := 0
+	if result.Scan(&memberId) != nil && r.admin.IsAdmin(workOnTaskData.ProjectID, userID) != nil {
+		return ErrNoRights
+	}
+
+	_, err := r.db.Exec("UPDATE tasks SET assignee = $1 WHERE id = $2 AND assignee IS NULL", userID, workOnTaskData.TaskID)
 	if err != nil {
 		r.log.Error(err)
 		return err

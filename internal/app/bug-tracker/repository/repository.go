@@ -30,7 +30,7 @@ type Project interface {
 
 type Task interface {
 	CreateTask(taskData *dto.CreateTaskDto, userID uint64) (uint64, error)
-	WorkOnTask(taskID, userID uint64) error
+	WorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID uint64) error
 }
 
 type Repository struct {

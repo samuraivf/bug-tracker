@@ -17,6 +17,6 @@ func (s *TaskService) CreateTask(taskData *dto.CreateTaskDto, userID uint64) (ui
 	return s.repo.CreateTask(taskData, userID)
 }
 
-func (s *TaskService) WorkOnTask(taskID, userID uint64) error {
-	return s.repo.WorkOnTask(taskID, userID)
+func (s *TaskService) WorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID uint64) error {
+	return s.repo.WorkOnTask(workOnTaskData, userID)
 }

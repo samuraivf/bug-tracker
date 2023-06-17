@@ -33,17 +33,21 @@ func (h *Handler) createTask(c echo.Context) error {
 }
 
 func (h *Handler) workOnTask(c echo.Context) error {
+	workOnTaskData := new(dto.WorkOnTaskDto)
 	userData, err := getUserData(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
 	}
 
-	taskID, err := h.params.GetIdParam(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	if err := c.Bind(workOnTaskData); err != nil {
+		return c.JSON(http.StatusBadRequest, errInvalidJSON)
 	}
 
-	err = h.service.WorkOnTask(taskID, userData.UserID)
+	if err := c.Validate(workOnTaskData); err != nil {
+		return c.JSON(http.StatusBadRequest, errInvalidTaskData)
+	}
+
+	err = h.service.WorkOnTask(workOnTaskData, userData.UserID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, newErrorMessage(err))
 	}
