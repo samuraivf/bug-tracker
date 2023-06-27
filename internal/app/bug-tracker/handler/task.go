@@ -40,11 +40,13 @@ func (h *Handler) workOnTask(c echo.Context) error {
 	}
 
 	if err := c.Bind(workOnTaskData); err != nil {
-		return c.JSON(http.StatusBadRequest, errInvalidJSON)
+		h.log.Error(err)
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidJSON))
 	}
 
 	if err := c.Validate(workOnTaskData); err != nil {
-		return c.JSON(http.StatusBadRequest, errInvalidTaskData)
+		h.log.Error(err)
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidTaskData))
 	}
 
 	err = h.service.WorkOnTask(workOnTaskData, userData.UserID)

@@ -139,3 +139,125 @@ func Test_CreateTask(t *testing.T) {
 		})
 	}
 }
+
+func Test_WorkOnTask(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, workOnTaskData *dto.WorkOnTaskDto, userID uint64) *TaskRepository
+	err := errors.New("error")
+
+	tests := []struct {
+		name           string
+		workOnTaskData *dto.WorkOnTaskDto
+		userID         uint64
+		mockBehaviour  mockBehaviour
+		expectedError  error
+	}{
+		{
+			name: "Error no rights",
+			workOnTaskData: &dto.WorkOnTaskDto{
+				TaskID: 1,
+				ProjectID: 1,
+			},
+			userID: 1,
+			mockBehaviour: func(c *gomock.Controller, workOnTaskData *dto.WorkOnTaskDto, userID uint64) *TaskRepository {
+				admin := mock_repository.NewMockadmin(c)
+				db, mock, _ := sqlmock.New()
+
+				mock.ExpectQuery(
+					regexp.QuoteMeta(
+						"SELECT member_id FROM projects_members WHERE project_id = $1 AND member_id = $2",
+					),
+				).WithArgs(
+					workOnTaskData.ProjectID,
+					userID,
+				).WillReturnError(err)
+				admin.EXPECT().IsAdmin(workOnTaskData.ProjectID, userID).Return(err)
+
+				return &TaskRepository{db: db, admin: admin}
+			},
+			expectedError: ErrNoRights,
+		},
+		{
+			name: "Error cannot work on task",
+			workOnTaskData: &dto.WorkOnTaskDto{
+				TaskID: 1,
+				ProjectID: 1,
+			},
+			userID: 1,
+			mockBehaviour: func(c *gomock.Controller, workOnTaskData *dto.WorkOnTaskDto, userID uint64) *TaskRepository {
+				admin := mock_repository.NewMockadmin(c)
+				db, mock, _ := sqlmock.New()
+				log := mock_log.NewMockLog(c)
+
+				rows := sqlmock.NewRows([]string{"member_id"}).AddRow(uint64(1))
+				mock.ExpectQuery(
+					regexp.QuoteMeta(
+						"SELECT member_id FROM projects_members WHERE project_id = $1 AND member_id = $2",
+					),
+				).WithArgs(
+					workOnTaskData.ProjectID,
+					userID,
+				).WillReturnRows(rows)
+
+				mock.ExpectExec(
+					regexp.QuoteMeta(
+						"UPDATE tasks SET assignee = $1 WHERE id = $2 AND assignee IS NULL",
+					),
+				).WithArgs(
+					userID,
+					workOnTaskData.TaskID,
+				).WillReturnError(err)
+				log.EXPECT().Error(err)
+
+				return &TaskRepository{db: db, log: log, admin: admin}
+			},
+			expectedError:  err,
+		},
+		{
+			name: "OK",
+			workOnTaskData: &dto.WorkOnTaskDto{
+				TaskID: 1,
+				ProjectID: 1,
+			},
+			userID: 1,
+			mockBehaviour: func(c *gomock.Controller, workOnTaskData *dto.WorkOnTaskDto, userID uint64) *TaskRepository {
+				admin := mock_repository.NewMockadmin(c)
+				db, mock, _ := sqlmock.New()
+				log := mock_log.NewMockLog(c)
+
+				rows := sqlmock.NewRows([]string{"member_id"}).AddRow(uint64(1))
+				mock.ExpectQuery(
+					regexp.QuoteMeta(
+						"SELECT member_id FROM projects_members WHERE project_id = $1 AND member_id = $2",
+					),
+				).WithArgs(
+					workOnTaskData.ProjectID,
+					userID,
+				).WillReturnRows(rows)
+
+				mock.ExpectExec(
+					regexp.QuoteMeta(
+						"UPDATE tasks SET assignee = $1 WHERE id = $2 AND assignee IS NULL",
+					),
+				).WithArgs(
+					userID,
+					workOnTaskData.TaskID,
+				).WillReturnResult(sqlmock.NewResult(1, 1))
+
+				return &TaskRepository{db: db, log: log, admin: admin}
+			},
+			expectedError:  nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			repo := test.mockBehaviour(c, test.workOnTaskData, test.userID)
+			err := repo.WorkOnTask(test.workOnTaskData, test.userID)
+
+			require.Equal(t, test.expectedError, err)
+		})
+	}
+}

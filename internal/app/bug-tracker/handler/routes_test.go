@@ -41,6 +41,7 @@ func Test_setRoutes(t *testing.T) {
 	task := expected.Group(task, h.isAuthorized)
 	{
 		task.POST(create, h.createTask)
+		task.POST(workOnTask, h.workOnTask)
 	}
 
 	e = setRoutes(e, h)
