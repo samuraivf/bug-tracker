@@ -270,6 +270,21 @@ func (mr *MockTaskMockRecorder) CreateTask(taskData, userID interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTask", reflect.TypeOf((*MockTask)(nil).CreateTask), taskData, userID)
 }
 
+// UpdateTask mocks base method.
+func (m *MockTask) UpdateTask(taskData *dto.UpdateTaskDto, userID uint64) (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTask", taskData, userID)
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateTask indicates an expected call of UpdateTask.
+func (mr *MockTaskMockRecorder) UpdateTask(taskData, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTask", reflect.TypeOf((*MockTask)(nil).UpdateTask), taskData, userID)
+}
+
 // WorkOnTask mocks base method.
 func (m *MockTask) WorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID uint64) error {
 	m.ctrl.T.Helper()

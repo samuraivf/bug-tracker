@@ -67,3 +67,29 @@ func (r *TaskRepository) WorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID ui
 
 	return nil
 }
+
+func (r *TaskRepository) UpdateTask(taskData *dto.UpdateTaskDto, userID uint64) (uint64, error) {
+	if err := r.admin.IsAdmin(taskData.ProjectID, userID); err != nil {
+		return 0, err
+	}
+
+	result := r.db.QueryRow(
+		"UPDATE tasks SET name = $1, description = $2, task_priority = $3, project_id = $4, task_type = $5, perform_to = $6 WHERE id = $7 RETURNING id",
+		taskData.Name,
+		taskData.Description,
+		taskData.TaskPriority,
+		taskData.ProjectID,
+		taskData.TaskType,
+		taskData.PerformTo,
+		taskData.TaskID,
+	)
+
+	var taskID uint64
+	if err := result.Scan(&taskID); err != nil {
+		r.log.Error(err)
+		return 0, err
+	}
+	r.log.Infof("Create task: id = %d", taskID)
+
+	return taskID, nil
+}

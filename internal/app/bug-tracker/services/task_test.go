@@ -96,11 +96,11 @@ func Test_WorkOnTask(t *testing.T) {
 
 				return &TaskService{repo: repository.Repository{Task: task}}
 			},
-			userID:         1,
-			expectedError:  err,
+			userID:        1,
+			expectedError: err,
 			workOnTaskData: &dto.WorkOnTaskDto{
-				TaskID: 1,
-				ProjectID:   1,
+				TaskID:    1,
+				ProjectID: 1,
 			},
 		},
 		{
@@ -112,11 +112,11 @@ func Test_WorkOnTask(t *testing.T) {
 
 				return &TaskService{repo: repository.Repository{Task: task}}
 			},
-			userID:         1,
-			expectedError:  nil,
+			userID:        1,
+			expectedError: nil,
 			workOnTaskData: &dto.WorkOnTaskDto{
-				TaskID: 1,
-				ProjectID:   1,
+				TaskID:    1,
+				ProjectID: 1,
 			},
 		},
 	}

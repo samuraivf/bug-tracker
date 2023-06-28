@@ -56,3 +56,28 @@ func (h *Handler) workOnTask(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, true)
 }
+
+func (h *Handler) updateTask(c echo.Context) error {
+	taskData := new(dto.UpdateTaskDto)
+	userData, err := getUserData(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	if err := c.Bind(taskData); err != nil {
+		h.log.Error(err)
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidJSON))
+	}
+
+	if err := c.Validate(taskData); err != nil {
+		h.log.Error(err)
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidTaskData))
+	}
+
+	id, err := h.service.Task.UpdateTask(taskData, userData.UserID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(err))
+	}
+
+	return c.JSON(http.StatusOK, id)
+}

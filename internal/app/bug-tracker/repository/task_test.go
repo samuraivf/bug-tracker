@@ -154,7 +154,7 @@ func Test_WorkOnTask(t *testing.T) {
 		{
 			name: "Error no rights",
 			workOnTaskData: &dto.WorkOnTaskDto{
-				TaskID: 1,
+				TaskID:    1,
 				ProjectID: 1,
 			},
 			userID: 1,
@@ -179,7 +179,7 @@ func Test_WorkOnTask(t *testing.T) {
 		{
 			name: "Error cannot work on task",
 			workOnTaskData: &dto.WorkOnTaskDto{
-				TaskID: 1,
+				TaskID:    1,
 				ProjectID: 1,
 			},
 			userID: 1,
@@ -210,12 +210,12 @@ func Test_WorkOnTask(t *testing.T) {
 
 				return &TaskRepository{db: db, log: log, admin: admin}
 			},
-			expectedError:  err,
+			expectedError: err,
 		},
 		{
 			name: "OK",
 			workOnTaskData: &dto.WorkOnTaskDto{
-				TaskID: 1,
+				TaskID:    1,
 				ProjectID: 1,
 			},
 			userID: 1,
@@ -245,7 +245,7 @@ func Test_WorkOnTask(t *testing.T) {
 
 				return &TaskRepository{db: db, log: log, admin: admin}
 			},
-			expectedError:  nil,
+			expectedError: nil,
 		},
 	}
 
