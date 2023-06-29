@@ -133,3 +133,69 @@ func Test_WorkOnTask(t *testing.T) {
 		})
 	}
 }
+
+func Test_UpdateTask(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, taskData *dto.UpdateTaskDto, userID uint64) *TaskService
+	err := errors.New("error")
+
+	tests := []struct {
+		name           string
+		mockBehaviour  mockBehaviour
+		userID         uint64
+		expectedResult uint64
+		expectedError  error
+		taskData       *dto.UpdateTaskDto
+	}{
+		{
+			name: "Error",
+			mockBehaviour: func(c *gomock.Controller, taskData *dto.UpdateTaskDto, userID uint64) *TaskService {
+				task := mock_repository.NewMockTask(c)
+
+				task.EXPECT().UpdateTask(taskData, userID).Return(uint64(0), err)
+
+				return &TaskService{repo: repository.Repository{Task: task}}
+			},
+			userID:         1,
+			expectedResult: 0,
+			expectedError:  err,
+			taskData: &dto.UpdateTaskDto{
+				Name:        "name",
+				Description: "description",
+				ProjectID:   1,
+				TaskID:      1,
+			},
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, taskData *dto.UpdateTaskDto, userID uint64) *TaskService {
+				task := mock_repository.NewMockTask(c)
+
+				task.EXPECT().UpdateTask(taskData, userID).Return(uint64(1), nil)
+
+				return &TaskService{repo: repository.Repository{Task: task}}
+			},
+			userID:         1,
+			expectedResult: 1,
+			expectedError:  nil,
+			taskData: &dto.UpdateTaskDto{
+				Name:        "name",
+				Description: "description",
+				ProjectID:   1,
+				TaskID:      1,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			service := test.mockBehaviour(c, test.taskData, test.userID)
+			user, err := service.UpdateTask(test.taskData, test.userID)
+
+			require.Equal(t, test.expectedResult, user)
+			require.Equal(t, test.expectedError, err)
+		})
+	}
+}
