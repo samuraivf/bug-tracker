@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/golang/mock/gomock"
@@ -13,7 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
+	mock_handler "github.com/samuraivf/bug-tracker/internal/app/bug-tracker/handler/mocks"
 	mock_log "github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log/mocks"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/models"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/services"
 	mock_services "github.com/samuraivf/bug-tracker/internal/app/bug-tracker/services/mocks"
 )
@@ -410,6 +413,118 @@ func Test_updateTask(t *testing.T) {
 			req.Close = true
 
 			require.NoError(t, handler.updateTask(echoCtx))
+			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
+			require.Equal(t, test.expectedReturnBody, rec.Body.String())
+		})
+	}
+}
+
+func Test_getTaskById(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler
+	err := errors.New("error")
+	successReturnBody := `{"id":1,"name":"name","description":"description","priority":"high","projectId":1,"taskType":"TO DO","assignee":1,"createdAt":"1111-11-11T11:11:11Z","performTo":"1111-11-11T11:11:11Z"}` + "\n"
+
+	tests := []struct {
+		name               string
+		mockBehaviour      mockBehaviour
+		id                 uint64
+		paramId            string
+		expectedStatusCode int
+		expectedReturnBody string
+	}{
+		{
+			name: "Error in params.GetIdParam",
+			mockBehaviour: func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler {
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(uint64(0), err)
+
+				return &Handler{params: params}
+			},
+			paramId:            "1b",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + err.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error cannot get task",
+			mockBehaviour: func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler {
+				task := mock_services.NewMockTask(c)
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(id, nil)
+
+				task.EXPECT().GetTaskById(id).Return(nil, err)
+
+				serv := &services.Service{Task: task}
+
+				return &Handler{serv, nil, nil, params}
+			},
+			id:                 1,
+			paramId:            "1",
+			expectedStatusCode: http.StatusNotFound,
+			expectedReturnBody: `{"message":"` + errTaskNotFound.Error() + `"}` + "\n",
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler {
+				task := mock_services.NewMockTask(c)
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(id, nil)
+
+				task.EXPECT().GetTaskById(id).Return(&models.Task{
+					ID:          1,
+					Name:        "name",
+					Description: "description",
+					Priority:    "high",
+					ProjectID:   1,
+					TaskType:    "TO DO",
+					Assignee:    1,
+					CreatedAt:   time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+					PerformTo:   time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+				},
+					nil,
+				)
+
+				serv := &services.Service{Task: task}
+
+				return &Handler{serv, nil, nil, params}
+			},
+			id:                 1,
+			paramId:            "1",
+			expectedStatusCode: http.StatusFound,
+			expectedReturnBody: successReturnBody,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			e := echo.New()
+			defer e.Close()
+
+			validator := validator.New()
+			e.Validator = newValidator(validator)
+
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+
+			echoCtx := e.NewContext(req, rec)
+
+			handler := test.mockBehaviour(c, test.id, echoCtx)
+			e.GET(id, handler.getTaskById)
+
+			echoCtx.SetPath("/:id")
+			echoCtx.SetParamNames("id")
+			echoCtx.SetParamValues(test.paramId)
+
+			defer rec.Result().Body.Close()
+			req.Close = true
+
+			require.NoError(t, handler.getTaskById(echoCtx))
 			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
 			require.Equal(t, test.expectedReturnBody, rec.Body.String())
 		})

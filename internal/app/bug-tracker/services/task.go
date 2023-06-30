@@ -2,6 +2,7 @@ package services
 
 import (
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/models"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository"
 )
 
@@ -23,4 +24,8 @@ func (s *TaskService) WorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID uint6
 
 func (s *TaskService) UpdateTask(taskData *dto.UpdateTaskDto, userID uint64) (uint64, error) {
 	return s.repo.UpdateTask(taskData, userID)
+}
+
+func (s *TaskService) GetTaskById(id uint64) (*models.Task, error) {
+	return s.repo.GetTaskById(id)
 }

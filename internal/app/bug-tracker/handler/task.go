@@ -81,3 +81,17 @@ func (h *Handler) updateTask(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, id)
 }
+
+func (h *Handler) getTaskById(c echo.Context) error {
+	id, err := h.params.GetIdParam(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	project, err := h.service.Task.GetTaskById(id)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, newErrorMessage(errTaskNotFound))
+	}
+
+	return c.JSON(http.StatusFound, project)
+}

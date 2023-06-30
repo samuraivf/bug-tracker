@@ -4,6 +4,7 @@ import (
 	"errors"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/golang/mock/gomock"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
 	mock_log "github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log/mocks"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/models"
 	mock_repository "github.com/samuraivf/bug-tracker/internal/app/bug-tracker/repository/mocks"
 )
 
@@ -384,6 +386,123 @@ func Test_UpdateTask(t *testing.T) {
 
 			repo := test.mockBehaviour(c, test.taskData, test.userID)
 			res, err := repo.UpdateTask(test.taskData, test.userID)
+
+			require.Equal(t, test.expectedResult, res)
+			require.Equal(t, test.expectedError, err)
+		})
+	}
+}
+
+func Test_GetTaskById(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, id uint64) *TaskRepository
+	err := errors.New("error")
+
+	tests := []struct {
+		name           string
+		id             uint64
+		mockBehaviour  mockBehaviour
+		expectedResult *models.Task
+		expectedError  error
+	}{
+		{
+			name: "Error",
+			id:   1,
+			mockBehaviour: func(c *gomock.Controller, id uint64) *TaskRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+
+				mock.ExpectQuery(
+					regexp.QuoteMeta(
+						`SELECT 
+							id, 
+							name, 
+							description, 
+							task_priority, 
+							project_id, 
+							task_type, 
+							assignee, 
+							created_at, 
+							perform_to 
+						FROM tasks WHERE id = $1`,
+					),
+				).WithArgs(id).WillReturnError(err)
+				log.EXPECT().Error(err)
+
+				return &TaskRepository{db: db, log: log}
+			},
+			expectedResult: nil,
+			expectedError:  err,
+		},
+		{
+			name: "OK",
+			id:   1,
+			mockBehaviour: func(c *gomock.Controller, id uint64) *TaskRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+
+				rows := sqlmock.NewRows([]string{
+					"id",
+					"name",
+					"description",
+					"task_priority",
+					"project_id",
+					"task_type",
+					"assignee",
+					"created_at",
+					"perform_to",
+				}).AddRow(
+					uint64(1),
+					"name",
+					"description",
+					"high",
+					uint64(1),
+					"TO DO",
+					uint64(1),
+					time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+					time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+				)
+
+				mock.ExpectQuery(
+					regexp.QuoteMeta(
+						`SELECT 
+							id, 
+							name, 
+							description, 
+							task_priority, 
+							project_id, 
+							task_type, 
+							assignee, 
+							created_at, 
+							perform_to 
+						FROM tasks WHERE id = $1`,
+					),
+				).WithArgs(id).WillReturnRows(rows)
+				log.EXPECT().Infof("Get task: id = %d", uint64(1))
+
+				return &TaskRepository{db: db, log: log}
+			},
+			expectedResult: &models.Task{
+				ID:          1,
+				Name:        "name",
+				Description: "description",
+				Priority:    "high",
+				ProjectID:   1,
+				TaskType:    "TO DO",
+				Assignee:    1,
+				CreatedAt:   time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+				PerformTo:   time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+			},
+			expectedError: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			repo := test.mockBehaviour(c, test.id)
+			res, err := repo.GetTaskById(test.id)
 
 			require.Equal(t, test.expectedResult, res)
 			require.Equal(t, test.expectedError, err)

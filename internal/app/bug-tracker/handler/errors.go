@@ -24,4 +24,5 @@ var (
 	errInvalidParam       = errors.New("error invalid param")
 
 	errInvalidTaskData = errors.New("error invalid task data")
+	errTaskNotFound    = errors.New("error task is not found")
 )

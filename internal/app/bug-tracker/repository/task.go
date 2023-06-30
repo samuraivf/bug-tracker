@@ -6,6 +6,7 @@ import (
 
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/dto"
 	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/log"
+	"github.com/samuraivf/bug-tracker/internal/app/bug-tracker/models"
 )
 
 type TaskRepository struct {
@@ -92,4 +93,40 @@ func (r *TaskRepository) UpdateTask(taskData *dto.UpdateTaskDto, userID uint64) 
 	r.log.Infof("Create task: id = %d", taskID)
 
 	return taskID, nil
+}
+
+func (r *TaskRepository) GetTaskById(id uint64) (*models.Task, error) {
+	result := r.db.QueryRow(
+		`SELECT 
+			id, 
+			name, 
+			description, 
+			task_priority, 
+			project_id, 
+			task_type, 
+			assignee, 
+			created_at, 
+			perform_to 
+		FROM tasks WHERE id = $1`,
+		id,
+	)
+
+	task := new(models.Task)
+	if err := result.Scan(
+		&task.ID,
+		&task.Name,
+		&task.Description,
+		&task.Priority,
+		&task.ProjectID,
+		&task.TaskType,
+		&task.Assignee,
+		&task.CreatedAt,
+		&task.PerformTo,
+	); err != nil {
+		r.log.Error(err)
+		return nil, err
+	}
+	r.log.Infof("Get task: id = %d", id)
+
+	return task, nil
 }

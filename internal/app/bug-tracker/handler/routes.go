@@ -36,6 +36,7 @@ func setRoutes(e *echo.Echo, h *Handler) *echo.Echo {
 		task.POST(create, h.createTask)
 		task.POST(workOnTask, h.workOnTask)
 		task.PUT(update, h.updateTask)
+		task.GET(id, h.getTaskById)
 	}
 
 	return e
