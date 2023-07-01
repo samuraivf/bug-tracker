@@ -22,6 +22,10 @@ func (s *TaskService) WorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID uint6
 	return s.repo.WorkOnTask(workOnTaskData, userID)
 }
 
+func (s *TaskService) StopWorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID uint64) error {
+	return s.repo.StopWorkOnTask(workOnTaskData, userID)
+}
+
 func (s *TaskService) UpdateTask(taskData *dto.UpdateTaskDto, userID uint64) (uint64, error) {
 	return s.repo.UpdateTask(taskData, userID)
 }

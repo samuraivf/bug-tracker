@@ -31,6 +31,7 @@ type Project interface {
 type Task interface {
 	CreateTask(taskData *dto.CreateTaskDto, userID uint64) (uint64, error)
 	WorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID uint64) error
+	StopWorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID uint64) error
 	UpdateTask(taskData *dto.UpdateTaskDto, userID uint64) (uint64, error)
 	GetTaskById(it uint64) (*models.Task, error)
 }

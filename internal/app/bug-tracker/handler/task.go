@@ -57,6 +57,31 @@ func (h *Handler) workOnTask(c echo.Context) error {
 	return c.JSON(http.StatusOK, true)
 }
 
+func (h *Handler) stopWorkOnTask(c echo.Context) error {
+	workOnTaskData := new(dto.WorkOnTaskDto)
+	userData, err := getUserData(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	if err := c.Bind(workOnTaskData); err != nil {
+		h.log.Error(err)
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidJSON))
+	}
+
+	if err := c.Validate(workOnTaskData); err != nil {
+		h.log.Error(err)
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidTaskData))
+	}
+
+	err = h.service.StopWorkOnTask(workOnTaskData, userData.UserID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(err))
+	}
+
+	return c.JSON(http.StatusOK, true)
+}
+
 func (h *Handler) updateTask(c echo.Context) error {
 	taskData := new(dto.UpdateTaskDto)
 	userData, err := getUserData(c)

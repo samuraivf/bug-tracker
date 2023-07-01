@@ -285,6 +285,20 @@ func (mr *MockTaskMockRecorder) GetTaskById(it interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskById", reflect.TypeOf((*MockTask)(nil).GetTaskById), it)
 }
 
+// StopWorkOnTask mocks base method.
+func (m *MockTask) StopWorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StopWorkOnTask", workOnTaskData, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StopWorkOnTask indicates an expected call of StopWorkOnTask.
+func (mr *MockTaskMockRecorder) StopWorkOnTask(workOnTaskData, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StopWorkOnTask", reflect.TypeOf((*MockTask)(nil).StopWorkOnTask), workOnTaskData, userID)
+}
+
 // UpdateTask mocks base method.
 func (m *MockTask) UpdateTask(taskData *dto.UpdateTaskDto, userID uint64) (uint64, error) {
 	m.ctrl.T.Helper()

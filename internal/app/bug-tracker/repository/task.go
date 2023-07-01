@@ -69,6 +69,26 @@ func (r *TaskRepository) WorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID ui
 	return nil
 }
 
+func (r *TaskRepository) StopWorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID uint64) error {
+	result := r.db.QueryRow(
+		"SELECT member_id FROM projects_members WHERE project_id = $1 AND member_id = $2",
+		workOnTaskData.ProjectID,
+		userID,
+	)
+	memberId := 0
+	if result.Scan(&memberId) != nil && r.admin.IsAdmin(workOnTaskData.ProjectID, userID) != nil {
+		return ErrNoRights
+	}
+
+	_, err := r.db.Exec("UPDATE tasks SET assignee = NULL WHERE id = $1 AND assignee IS NOT NULL", workOnTaskData.TaskID)
+	if err != nil {
+		r.log.Error(err)
+		return err
+	}
+
+	return nil
+}
+
 func (r *TaskRepository) UpdateTask(taskData *dto.UpdateTaskDto, userID uint64) (uint64, error) {
 	if err := r.admin.IsAdmin(taskData.ProjectID, userID); err != nil {
 		return 0, err
