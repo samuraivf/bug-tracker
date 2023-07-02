@@ -150,3 +150,17 @@ func (r *TaskRepository) GetTaskById(id uint64) (*models.Task, error) {
 
 	return task, nil
 }
+
+func (r *TaskRepository) DeleteTask(taskData *dto.DeleteTaskDto, userID uint64) error {
+	if err := r.admin.IsAdmin(taskData.ProjectID, userID); err != nil {
+		return err
+	}
+
+	_, err := r.db.Exec("DELETE FROM tasks WHERE id = $1", taskData.TaskID)
+
+	if err != nil {
+		r.log.Error(err)
+	}
+
+	return err
+}

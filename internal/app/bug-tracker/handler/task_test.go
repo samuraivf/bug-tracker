@@ -658,3 +658,131 @@ func Test_getTaskById(t *testing.T) {
 		})
 	}
 }
+
+func Test_deleteTask(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, taskData *dto.DeleteTaskDto, userID uint64) *Handler
+	err := errors.New("error")
+
+	tests := []struct {
+		name               string
+		mockBehaviour      mockBehaviour
+		taskData           *dto.DeleteTaskDto
+		taskDataJSON       string
+		userData           *services.TokenData
+		expectedStatusCode int
+		expectedReturnBody string
+	}{
+		{
+			name: "Error invalid user data",
+			mockBehaviour: func(c *gomock.Controller, taskData *dto.DeleteTaskDto, userID uint64) *Handler {
+				return &Handler{}
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errUserNotFound.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error invalid json",
+			mockBehaviour: func(c *gomock.Controller, taskData *dto.DeleteTaskDto, userID uint64) *Handler {
+				log := mock_log.NewMockLog(c)
+
+				log.EXPECT().Error(gomock.Any()).Return()
+
+				return &Handler{nil, log, nil, nil}
+			},
+			taskData:           nil,
+			taskDataJSON:       `{"invalid"}`,
+			userData:           &services.TokenData{UserID: 1},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errInvalidJSON.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error invalid delete task data",
+			mockBehaviour: func(c *gomock.Controller, taskData *dto.DeleteTaskDto, userID uint64) *Handler {
+				log := mock_log.NewMockLog(c)
+
+				log.EXPECT().Error(gomock.Any()).Return()
+
+				return &Handler{nil, log, nil, nil}
+			},
+			taskData:           nil,
+			taskDataJSON:       `{"taskId": 1}`,
+			userData:           &services.TokenData{UserID: 1},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errInvalidTaskData.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error cannot delete task",
+			mockBehaviour: func(c *gomock.Controller, taskData *dto.DeleteTaskDto, userID uint64) *Handler {
+				task := mock_services.NewMockTask(c)
+
+				task.EXPECT().DeleteTask(taskData, userID).Return(err)
+
+				serv := &services.Service{Task: task}
+
+				return &Handler{serv, nil, nil, nil}
+			},
+			taskData: &dto.DeleteTaskDto{
+				TaskID:    1,
+				ProjectID: 1,
+			},
+			taskDataJSON:       `{"taskId": 1, "projectId": 1}`,
+			userData:           &services.TokenData{UserID: 1},
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedReturnBody: `{"message":"` + err.Error() + `"}` + "\n",
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, taskData *dto.DeleteTaskDto, userID uint64) *Handler {
+				task := mock_services.NewMockTask(c)
+
+				task.EXPECT().DeleteTask(taskData, userID).Return(nil)
+
+				serv := &services.Service{Task: task}
+
+				return &Handler{serv, nil, nil, nil}
+			},
+			taskData: &dto.DeleteTaskDto{
+				TaskID:    1,
+				ProjectID: 1,
+			},
+			taskDataJSON:       `{"taskId": 1, "projectId": 1}`,
+			userData:           &services.TokenData{UserID: 1},
+			expectedStatusCode: http.StatusOK,
+			expectedReturnBody: "true" + "\n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			userID := uint64(0)
+			if test.userData != nil {
+				userID = test.userData.UserID
+			}
+
+			handler := test.mockBehaviour(c, test.taskData, userID)
+
+			e := echo.New()
+			defer e.Close()
+
+			validator := validator.New()
+			e.Validator = newValidator(validator)
+			e.DELETE(empty, handler.deleteTask)
+
+			req := httptest.NewRequest(http.MethodDelete, empty, strings.NewReader(test.taskDataJSON))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			echoCtx := e.NewContext(req, rec)
+			echoCtx.Set(userDataCtx, test.userData)
+
+			defer rec.Result().Body.Close()
+			req.Close = true
+
+			require.NoError(t, handler.deleteTask(echoCtx))
+			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
+			require.Equal(t, test.expectedReturnBody, rec.Body.String())
+		})
+	}
+}

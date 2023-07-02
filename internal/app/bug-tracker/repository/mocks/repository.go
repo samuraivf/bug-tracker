@@ -270,19 +270,33 @@ func (mr *MockTaskMockRecorder) CreateTask(taskData, userID interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTask", reflect.TypeOf((*MockTask)(nil).CreateTask), taskData, userID)
 }
 
-// GetTaskById mocks base method.
-func (m *MockTask) GetTaskById(it uint64) (*models.Task, error) {
+// DeleteTask mocks base method.
+func (m *MockTask) DeleteTask(taskData *dto.DeleteTaskDto, userID uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTaskById", it)
+	ret := m.ctrl.Call(m, "DeleteTask", taskData, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteTask indicates an expected call of DeleteTask.
+func (mr *MockTaskMockRecorder) DeleteTask(taskData, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTask", reflect.TypeOf((*MockTask)(nil).DeleteTask), taskData, userID)
+}
+
+// GetTaskById mocks base method.
+func (m *MockTask) GetTaskById(id uint64) (*models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTaskById", id)
 	ret0, _ := ret[0].(*models.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetTaskById indicates an expected call of GetTaskById.
-func (mr *MockTaskMockRecorder) GetTaskById(it interface{}) *gomock.Call {
+func (mr *MockTaskMockRecorder) GetTaskById(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskById", reflect.TypeOf((*MockTask)(nil).GetTaskById), it)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTaskById", reflect.TypeOf((*MockTask)(nil).GetTaskById), id)
 }
 
 // StopWorkOnTask mocks base method.

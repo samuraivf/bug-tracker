@@ -120,3 +120,27 @@ func (h *Handler) getTaskById(c echo.Context) error {
 
 	return c.JSON(http.StatusFound, project)
 }
+
+func (h *Handler) deleteTask(c echo.Context) error {
+	taskData := new(dto.DeleteTaskDto)
+	userData, err := getUserData(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	if err := c.Bind(taskData); err != nil {
+		h.log.Error(err)
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidJSON))
+	}
+
+	if err := c.Validate(taskData); err != nil {
+		h.log.Error(err)
+		return c.JSON(http.StatusBadRequest, newErrorMessage(errInvalidTaskData))
+	}
+
+	if err := h.service.Task.DeleteTask(taskData, userData.UserID); err != nil {
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(err))
+	}
+
+	return c.JSON(http.StatusOK, true)
+}

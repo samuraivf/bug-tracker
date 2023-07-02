@@ -629,3 +629,90 @@ func Test_GetTaskById(t *testing.T) {
 		})
 	}
 }
+
+func Test_DeleteTask(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, taskData *dto.DeleteTaskDto, userID uint64) *TaskRepository
+	err := errors.New("error")
+
+	tests := []struct {
+		name          string
+		taskData      *dto.DeleteTaskDto
+		userID        uint64
+		mockBehaviour mockBehaviour
+		expectedError error
+	}{
+		{
+			name: "Error in admin",
+			taskData: &dto.DeleteTaskDto{
+				ProjectID: 1,
+				TaskID:    1,
+			},
+			userID: 1,
+			mockBehaviour: func(c *gomock.Controller, taskData *dto.DeleteTaskDto, userID uint64) *TaskRepository {
+				admin := mock_repository.NewMockadmin(c)
+
+				admin.EXPECT().IsAdmin(taskData.ProjectID, userID).Return(err)
+
+				return &TaskRepository{admin: admin}
+			},
+			expectedError: err,
+		},
+		{
+			name: "Error cannot delete task",
+			taskData: &dto.DeleteTaskDto{
+				ProjectID: 1,
+				TaskID:    1,
+			},
+			userID: 1,
+			mockBehaviour: func(c *gomock.Controller, taskData *dto.DeleteTaskDto, userID uint64) *TaskRepository {
+				db, mock, _ := sqlmock.New()
+				admin := mock_repository.NewMockadmin(c)
+				log := mock_log.NewMockLog(c)
+
+				admin.EXPECT().IsAdmin(taskData.ProjectID, userID).Return(nil)
+
+				mock.ExpectExec(
+					regexp.QuoteMeta("DELETE FROM tasks WHERE id = $1"),
+				).WithArgs(taskData.TaskID).WillReturnError(err)
+
+				log.EXPECT().Error(err).Return()
+
+				return &TaskRepository{db: db, log: log, admin: admin}
+			},
+			expectedError: err,
+		},
+		{
+			name: "OK",
+			taskData: &dto.DeleteTaskDto{
+				ProjectID: 1,
+				TaskID:    1,
+			},
+			userID: 1,
+			mockBehaviour: func(c *gomock.Controller, taskData *dto.DeleteTaskDto, userID uint64) *TaskRepository {
+				db, mock, _ := sqlmock.New()
+				admin := mock_repository.NewMockadmin(c)
+
+				admin.EXPECT().IsAdmin(taskData.ProjectID, userID).Return(nil)
+
+				mock.ExpectExec(
+					regexp.QuoteMeta("DELETE FROM tasks WHERE id = $1"),
+				).WithArgs(taskData.TaskID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+				return &TaskRepository{db: db, log: nil, admin: admin}
+			},
+			expectedError: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			repo := test.mockBehaviour(c, test.taskData, test.userID)
+			err := repo.DeleteTask(test.taskData, test.userID)
+
+			require.Equal(t, test.expectedError, err)
+		})
+	}
+}

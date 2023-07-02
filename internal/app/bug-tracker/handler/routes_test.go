@@ -45,6 +45,7 @@ func Test_setRoutes(t *testing.T) {
 		task.POST(stopWorkOnTask, h.stopWorkOnTask)
 		task.PUT(update, h.updateTask)
 		task.GET(id, h.getTaskById)
+		task.DELETE(empty, h.deleteTask)
 	}
 
 	e = setRoutes(e, h)
