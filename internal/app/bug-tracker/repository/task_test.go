@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"errors"
 	"regexp"
 	"testing"
@@ -608,9 +609,15 @@ func Test_GetTaskById(t *testing.T) {
 				Priority:    "high",
 				ProjectID:   1,
 				TaskType:    "TO DO",
-				Assignee:    1,
-				CreatedAt:   time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
-				PerformTo:   time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+				Assignee:    sql.NullInt64{Int64: 1, Valid: true},
+				CreatedAt: sql.NullTime{
+					Time:  time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+					Valid: true,
+				},
+				PerformTo: sql.NullTime{
+					Time:  time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+					Valid: true,
+				},
 			},
 			expectedError: nil,
 		},

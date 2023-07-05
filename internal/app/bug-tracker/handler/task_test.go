@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -550,7 +551,7 @@ func Test_updateTask(t *testing.T) {
 func Test_getTaskById(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler
 	err := errors.New("error")
-	successReturnBody := `{"id":1,"name":"name","description":"description","priority":"high","projectId":1,"taskType":"TO DO","assignee":1,"createdAt":"1111-11-11T11:11:11Z","performTo":"1111-11-11T11:11:11Z"}` + "\n"
+	successReturnBody := `{"id":1,"name":"name","description":"description","priority":"high","projectId":1,"taskType":"TO DO","assignee":{"Int64":1,"Valid":true},"createdAt":{"Time":"1111-11-11T11:11:11Z","Valid":true},"performTo":{"Time":"1111-11-11T11:11:11Z","Valid":true}}` + "\n"
 
 	tests := []struct {
 		name               string
@@ -607,9 +608,15 @@ func Test_getTaskById(t *testing.T) {
 					Priority:    "high",
 					ProjectID:   1,
 					TaskType:    "TO DO",
-					Assignee:    1,
-					CreatedAt:   time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
-					PerformTo:   time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+					Assignee:    sql.NullInt64{Int64: 1, Valid: true},
+					CreatedAt: sql.NullTime{
+						Time:  time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+						Valid: true,
+					},
+					PerformTo: sql.NullTime{
+						Time:  time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+						Valid: true,
+					},
 				},
 					nil,
 				)

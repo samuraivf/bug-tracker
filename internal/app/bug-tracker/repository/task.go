@@ -151,6 +151,48 @@ func (r *TaskRepository) GetTaskById(id uint64) (*models.Task, error) {
 	return task, nil
 }
 
+func (r *TaskRepository) GetTasksByProjectId(id uint64) ([]*models.Task, error) {
+	rows, err := r.db.Query(
+		`SELECT 
+			id, 
+			name, 
+			description, 
+			task_priority, 
+			project_id, 
+			task_type, 
+			assignee, 
+			created_at, 
+			perform_to 
+		FROM tasks WHERE project_id = $1`,
+		id,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	tasks := make([]*models.Task, 0)
+	for rows.Next() {
+		task := new(models.Task)
+		if err := rows.Scan(
+			&task.ID,
+			&task.Name,
+			&task.Description,
+			&task.Priority,
+			&task.ProjectID,
+			&task.TaskType,
+			&task.Assignee,
+			&task.CreatedAt,
+			&task.PerformTo,
+		); err != nil {
+			r.log.Error(err)
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+
+	return tasks, nil
+}
+
 func (r *TaskRepository) DeleteTask(taskData *dto.DeleteTaskDto, userID uint64) error {
 	if err := r.admin.IsAdmin(taskData.ProjectID, userID); err != nil {
 		return err

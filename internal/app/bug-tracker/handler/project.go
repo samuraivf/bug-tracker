@@ -43,6 +43,28 @@ func (h *Handler) getProjectById(c echo.Context) error {
 	return c.JSON(http.StatusFound, project)
 }
 
+func (h *Handler) getProjectByIdWithTasks(c echo.Context) error {
+	id, err := h.params.GetIdParam(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	project, err := h.service.Project.GetProjectById(id)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, newErrorMessage(err))
+	}
+
+	tasks, err := h.service.Task.GetTasksByProjectId(id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(err))
+	}
+
+	return c.JSON(http.StatusFound, dto.ProjectWithTasks{
+		Project: project,
+		Tasks:   tasks,
+	})
+}
+
 func (h *Handler) deleteProject(c echo.Context) error {
 	id, err := h.params.GetIdParam(c)
 	if err != nil {

@@ -19,6 +19,7 @@ const (
 	deleteMember = "/member"
 	leave        = "/leave/:id"
 	setAdmin     = "/set-admin"
+	withTasks    = "/with-tasks" + id
 
 	task           = "/task"
 	workOnTask     = "/work-on-task"

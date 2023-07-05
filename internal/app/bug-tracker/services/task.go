@@ -34,6 +34,10 @@ func (s *TaskService) GetTaskById(id uint64) (*models.Task, error) {
 	return s.repo.GetTaskById(id)
 }
 
+func (s *TaskService) GetTasksByProjectId(id uint64) ([]*models.Task, error) {
+	return s.repo.GetTasksByProjectId(id)
+}
+
 func (s *TaskService) DeleteTask(taskData *dto.DeleteTaskDto, userID uint64) error {
 	return s.repo.DeleteTask(taskData, userID)
 }
