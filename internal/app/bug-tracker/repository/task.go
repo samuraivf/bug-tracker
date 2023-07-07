@@ -167,13 +167,14 @@ func (r *TaskRepository) GetTasksByProjectId(id uint64) ([]*models.Task, error) 
 		id,
 	)
 	if err != nil {
+		r.log.Error(err)
 		return nil, err
 	}
 
 	tasks := make([]*models.Task, 0)
 	for rows.Next() {
 		task := new(models.Task)
-		if err := rows.Scan(
+		err := rows.Scan(
 			&task.ID,
 			&task.Name,
 			&task.Description,
@@ -183,10 +184,12 @@ func (r *TaskRepository) GetTasksByProjectId(id uint64) ([]*models.Task, error) 
 			&task.Assignee,
 			&task.CreatedAt,
 			&task.PerformTo,
-		); err != nil {
+		)
+		if err != nil {
 			r.log.Error(err)
 			return nil, err
 		}
+
 		tasks = append(tasks, task)
 	}
 

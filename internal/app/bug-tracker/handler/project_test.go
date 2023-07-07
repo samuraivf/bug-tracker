@@ -230,6 +230,128 @@ func Test_getProjectById(t *testing.T) {
 	}
 }
 
+func Test_getProjectByIdWithTasks(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler
+	err := errors.New("error")
+
+	tests := []struct {
+		name               string
+		mockBehaviour      mockBehaviour
+		id                 uint64
+		paramId            string
+		expectedStatusCode int
+		expectedReturnBody string
+	}{
+		{
+			name: "Error in params.GetIdParam",
+			mockBehaviour: func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler {
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(uint64(0), err)
+
+				return &Handler{params: params}
+			},
+			paramId:            "1b",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + err.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error cannot get project",
+			mockBehaviour: func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler {
+				project := mock_services.NewMockProject(c)
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(id, nil)
+
+				project.EXPECT().GetProjectById(id).Return(nil, err)
+
+				serv := &services.Service{Project: project}
+
+				return &Handler{serv, nil, nil, params}
+			},
+			id:                 1,
+			paramId:            "1",
+			expectedStatusCode: http.StatusNotFound,
+			expectedReturnBody: `{"message":"` + err.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error cannot get tasks by project id",
+			mockBehaviour: func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler {
+				project := mock_services.NewMockProject(c)
+				tasks := mock_services.NewMockTask(c)
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(id, nil)
+
+				project.EXPECT().GetProjectById(id).Return(&models.Project{ID: 1, Name: "name", AdminID: 1}, nil)
+				tasks.EXPECT().GetTasksByProjectId(id).Return(nil, err)
+
+				serv := &services.Service{Project: project, Task: tasks}
+
+				return &Handler{serv, nil, nil, params}
+			},
+			id:                 1,
+			paramId:            "1",
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedReturnBody: `{"message":"` + err.Error() + `"}` + "\n",
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler {
+				project := mock_services.NewMockProject(c)
+				tasks := mock_services.NewMockTask(c)
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(id, nil)
+
+				project.EXPECT().GetProjectById(id).Return(&models.Project{ID: 1, Name: "name", AdminID: 1}, nil)
+				tasks.EXPECT().GetTasksByProjectId(id).Return([]*models.Task{{ID: 1}}, nil)
+
+				serv := &services.Service{Project: project, Task: tasks}
+
+				return &Handler{serv, nil, nil, params}
+			},
+			id:                 1,
+			paramId:            "1",
+			expectedStatusCode: http.StatusFound,
+			expectedReturnBody: `{"project":{"id":1,"name":"name","description":"","admin":1},"tasks":[{"id":1,"name":"","description":"","priority":"","projectId":0,"taskType":"","assignee":{"Int64":0,"Valid":false},"createdAt":{"Time":"0001-01-01T00:00:00Z","Valid":false},"performTo":{"Time":"0001-01-01T00:00:00Z","Valid":false}}]}` + "\n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			e := echo.New()
+			defer e.Close()
+
+			validator := validator.New()
+			e.Validator = newValidator(validator)
+
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+
+			echoCtx := e.NewContext(req, rec)
+
+			handler := test.mockBehaviour(c, test.id, echoCtx)
+			e.GET(id, handler.getProjectByIdWithTasks)
+
+			echoCtx.SetPath(withTasks)
+			echoCtx.SetParamNames("id")
+			echoCtx.SetParamValues(test.paramId)
+
+			defer rec.Result().Body.Close()
+			req.Close = true
+
+			require.NoError(t, handler.getProjectByIdWithTasks(echoCtx))
+			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
+			require.Equal(t, test.expectedReturnBody, rec.Body.String())
+		})
+	}
+}
+
 func Test_deleteProject(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, projectID, userID uint64, ctx echo.Context) *Handler
 	err := errors.New("error")

@@ -312,6 +312,59 @@ func Test_GetTaskById(t *testing.T) {
 	}
 }
 
+func Test_GetTasksByProjectId(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, id uint64) *TaskService
+	err := errors.New("error")
+
+	tests := []struct {
+		name           string
+		mockBehaviour  mockBehaviour
+		id             uint64
+		expectedResult []*models.Task
+		expectedError  error
+	}{
+		{
+			name: "Error",
+			mockBehaviour: func(c *gomock.Controller, id uint64) *TaskService {
+				task := mock_repository.NewMockTask(c)
+
+				task.EXPECT().GetTasksByProjectId(id).Return(nil, err)
+
+				return &TaskService{repo: repository.Repository{Task: task}}
+			},
+			id:             1,
+			expectedResult: nil,
+			expectedError:  err,
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, id uint64) *TaskService {
+				task := mock_repository.NewMockTask(c)
+
+				task.EXPECT().GetTasksByProjectId(id).Return([]*models.Task{{ID: 1}}, nil)
+
+				return &TaskService{repo: repository.Repository{Task: task}}
+			},
+			id:             1,
+			expectedResult: []*models.Task{{ID: 1}},
+			expectedError:  nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			service := test.mockBehaviour(c, test.id)
+			user, err := service.GetTasksByProjectId(test.id)
+
+			require.Equal(t, test.expectedResult, user)
+			require.Equal(t, test.expectedError, err)
+		})
+	}
+}
+
 func Test_DeleteTask(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, taskData *dto.DeleteTaskDto, userID uint64) *TaskService
 	err := errors.New("error")
