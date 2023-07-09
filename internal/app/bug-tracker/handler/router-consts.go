@@ -25,5 +25,6 @@ const (
 	workOnTask     = "/work-on-task"
 	stopWorkOnTask = "/stop-work-on-task"
 
-	user = "/user"
+	user     = "/user"
+	username = "/:username"
 )

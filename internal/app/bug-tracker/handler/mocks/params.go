@@ -48,3 +48,18 @@ func (mr *MockParamsMockRecorder) GetIdParam(c interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIdParam", reflect.TypeOf((*MockParams)(nil).GetIdParam), c)
 }
+
+// GetUsernameParam mocks base method.
+func (m *MockParams) GetUsernameParam(c echo.Context) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUsernameParam", c)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUsernameParam indicates an expected call of GetUsernameParam.
+func (mr *MockParamsMockRecorder) GetUsernameParam(c interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUsernameParam", reflect.TypeOf((*MockParams)(nil).GetUsernameParam), c)
+}

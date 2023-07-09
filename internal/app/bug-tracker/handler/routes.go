@@ -45,6 +45,7 @@ func setRoutes(e *echo.Echo, h *Handler) *echo.Echo {
 	user := e.Group(user, h.isAuthorized)
 	{
 		user.GET(id, h.getUserById)
+		user.GET(username, h.getUserByUsername)
 	}
 
 	return e

@@ -52,6 +52,7 @@ func Test_setRoutes(t *testing.T) {
 	user := expected.Group(user, h.isAuthorized)
 	{
 		user.GET(id, h.getUserById)
+		user.GET(username, h.getUserByUsername)
 	}
 
 	e = setRoutes(e, h)

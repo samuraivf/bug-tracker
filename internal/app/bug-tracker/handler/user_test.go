@@ -122,3 +122,109 @@ func Test_getUserById(t *testing.T) {
 		})
 	}
 }
+
+func Test_getUserByUsername(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, username string, ctx echo.Context) *Handler
+	err := errors.New("error")
+	successReturnBody := `{"id":1,"name":"name","username":"username","email":"email@gmail.com"}` + "\n"
+
+	tests := []struct {
+		name               string
+		mockBehaviour      mockBehaviour
+		username           string
+		paramUsername      string
+		expectedStatusCode int
+		expectedReturnBody string
+	}{
+		{
+			name: "Error in params.GetIdParam",
+			mockBehaviour: func(c *gomock.Controller, username string, ctx echo.Context) *Handler {
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetUsernameParam(ctx).Return("", err)
+
+				return &Handler{params: params}
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + err.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error cannot get user",
+			mockBehaviour: func(c *gomock.Controller, username string, ctx echo.Context) *Handler {
+				user := mock_services.NewMockUser(c)
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetUsernameParam(ctx).Return("username1", nil)
+
+				user.EXPECT().GetUserByUsername(username).Return(nil, err)
+
+				serv := &services.Service{User: user}
+
+				return &Handler{serv, nil, nil, params}
+			},
+			username:           "username1",
+			paramUsername:      "username1",
+			expectedStatusCode: http.StatusNotFound,
+			expectedReturnBody: `{"message":"` + errUserNotFound.Error() + `"}` + "\n",
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, username string, ctx echo.Context) *Handler {
+				user := mock_services.NewMockUser(c)
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetUsernameParam(ctx).Return("username1", nil)
+
+				user.EXPECT().GetUserByUsername(username).Return(&models.User{
+					ID:       1,
+					Name:     "name",
+					Username: "username",
+					Email:    "email@gmail.com",
+				},
+					nil,
+				)
+
+				serv := &services.Service{User: user}
+
+				return &Handler{serv, nil, nil, params}
+			},
+			username:           "username1",
+			paramUsername:      "username1",
+			expectedStatusCode: http.StatusFound,
+			expectedReturnBody: successReturnBody,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			e := echo.New()
+			defer e.Close()
+
+			validator := validator.New()
+			e.Validator = newValidator(validator)
+
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+
+			echoCtx := e.NewContext(req, rec)
+
+			handler := test.mockBehaviour(c, test.username, echoCtx)
+			e.GET(id, handler.getUserByUsername)
+
+			echoCtx.SetPath(username)
+			echoCtx.SetParamNames("username")
+			echoCtx.SetParamValues(test.paramUsername)
+
+			defer rec.Result().Body.Close()
+			req.Close = true
+
+			require.NoError(t, handler.getUserByUsername(echoCtx))
+			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
+			require.Equal(t, test.expectedReturnBody, rec.Body.String())
+		})
+	}
+}

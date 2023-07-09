@@ -19,3 +19,17 @@ func (h *Handler) getUserById(c echo.Context) error {
 
 	return c.JSON(http.StatusFound, user)
 }
+
+func (h *Handler) getUserByUsername(c echo.Context) error {
+	username, err := h.params.GetUsernameParam(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	user, err := h.service.User.GetUserByUsername(username)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, newErrorMessage(errUserNotFound))
+	}
+
+	return c.JSON(http.StatusFound, user)
+}

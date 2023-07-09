@@ -65,3 +65,53 @@ func Test_GetIdParam(t *testing.T) {
 		})
 	}
 }
+
+func Test_GetUsernameParam(t *testing.T) {
+	tests := []struct {
+		name           string
+		paramUsername  string
+		expectedResult string
+		expectedError  error
+	}{
+		{
+			name:           "Error empty param",
+			paramUsername:  "",
+			expectedResult: "",
+			expectedError:  errInvalidParam,
+		},
+		{
+			name:           "OK",
+			paramUsername:  "username1",
+			expectedResult: "username1",
+			expectedError:  nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			e := echo.New()
+			defer e.Close()
+
+			validator := validator.New()
+			e.Validator = newValidator(validator)
+
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+
+			echoCtx := e.NewContext(req, rec)
+			echoCtx.SetPath(username)
+			echoCtx.SetParamNames("username")
+			echoCtx.SetParamValues(test.paramUsername)
+
+			defer rec.Result().Body.Close()
+			req.Close = true
+
+			p := &params{}
+			id, err := p.GetUsernameParam(echoCtx)
+
+			require.Equal(t, test.expectedResult, id)
+			require.Equal(t, test.expectedError, err)
+		})
+	}
+}

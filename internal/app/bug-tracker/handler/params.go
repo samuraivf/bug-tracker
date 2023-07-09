@@ -10,6 +10,7 @@ import (
 
 type Params interface {
 	GetIdParam(c echo.Context) (uint64, error)
+	GetUsernameParam(c echo.Context) (string, error)
 }
 
 type params struct{}
@@ -27,4 +28,14 @@ func (p *params) GetIdParam(c echo.Context) (uint64, error) {
 	}
 
 	return uint64ID, nil
+}
+
+func (p *params) GetUsernameParam(c echo.Context) (string, error) {
+	username := c.Param("username")
+
+	if username == "" {
+		return "", errInvalidParam
+	}
+
+	return username, nil
 }
