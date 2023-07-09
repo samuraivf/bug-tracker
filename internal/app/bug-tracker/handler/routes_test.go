@@ -49,6 +49,11 @@ func Test_setRoutes(t *testing.T) {
 		task.DELETE(empty, h.deleteTask)
 	}
 
+	user := expected.Group(user, h.isAuthorized)
+	{
+		user.GET(id, h.getUserById)
+	}
+
 	e = setRoutes(e, h)
 
 	require.Equal(t, len(expected.Routes()), len(e.Routes()))

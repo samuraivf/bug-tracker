@@ -113,12 +113,12 @@ func (h *Handler) getTaskById(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
 	}
 
-	project, err := h.service.Task.GetTaskById(id)
+	task, err := h.service.Task.GetTaskById(id)
 	if err != nil {
 		return c.JSON(http.StatusNotFound, newErrorMessage(errTaskNotFound))
 	}
 
-	return c.JSON(http.StatusFound, project)
+	return c.JSON(http.StatusFound, task)
 }
 
 func (h *Handler) deleteTask(c echo.Context) error {

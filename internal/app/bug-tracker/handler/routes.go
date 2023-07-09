@@ -42,5 +42,10 @@ func setRoutes(e *echo.Echo, h *Handler) *echo.Echo {
 		task.DELETE(empty, h.deleteTask)
 	}
 
+	user := e.Group(user, h.isAuthorized)
+	{
+		user.GET(id, h.getUserById)
+	}
+
 	return e
 }
