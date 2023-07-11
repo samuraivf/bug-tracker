@@ -180,3 +180,29 @@ func (r *ProjectRepository) SetNewAdmin(newAdminData *dto.NewAdminDto, adminID u
 
 	return err
 }
+
+func (r *ProjectRepository) GetProjectsByUserId(id uint64) ([]*models.Project, error) {
+	rows, err := r.db.Query(
+		`SELECT * FROM projects WHERE projects.id IN (
+			SELECT project_id FROM projects_members WHERE member_id = $1
+		) UNION SELECT * FROM projects WHERE admin = $1`,
+		id,
+	)
+	if err != nil {
+		r.log.Error(err)
+		return nil, err
+	}
+
+	projects := make([]*models.Project, 0)
+	for rows.Next() {
+		project := new(models.Project)
+		if err := rows.Scan(&project.ID, &project.Name, &project.Description, &project.AdminID); err != nil {
+			r.log.Error(err)
+			return nil, err
+		}
+
+		projects = append(projects, project)
+	}
+
+	return projects, nil
+}

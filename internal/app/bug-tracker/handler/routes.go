@@ -46,6 +46,7 @@ func setRoutes(e *echo.Echo, h *Handler) *echo.Echo {
 	{
 		user.GET(id, h.getUserById)
 		user.GET(username, h.getUserByUsername)
+		user.GET(projects, h.getUserProjects)
 	}
 
 	return e

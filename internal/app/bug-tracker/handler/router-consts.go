@@ -27,4 +27,5 @@ const (
 
 	user     = "/user"
 	username = "/:username"
+	projects = "/projects"
 )

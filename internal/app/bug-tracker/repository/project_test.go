@@ -789,3 +789,78 @@ func Test_SetNewAdmin(t *testing.T) {
 		})
 	}
 }
+
+func Test_getProjectsByUserId(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, id uint64) *ProjectRepository
+	err := errors.New("error")
+
+	tests := []struct {
+		name           string
+		id             uint64
+		mockBehaviour  mockBehaviour
+		expectedResult []*models.Project
+		expectedError  error
+	}{
+		{
+			name: "Error",
+			id:   1,
+			mockBehaviour: func(c *gomock.Controller, id uint64) *ProjectRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+
+				mock.ExpectQuery(
+					regexp.QuoteMeta(
+						`SELECT * FROM projects WHERE projects.id IN (
+							SELECT project_id FROM projects_members WHERE member_id = $1
+						) UNION SELECT * FROM projects WHERE admin = $1`,
+					),
+				).WithArgs(id).WillReturnError(err)
+				log.EXPECT().Error(err)
+
+				return &ProjectRepository{db: db, log: log}
+			},
+			expectedResult: nil,
+			expectedError:  err,
+		},
+		{
+			name: "OK",
+			id:   1,
+			mockBehaviour: func(c *gomock.Controller, id uint64) *ProjectRepository {
+				log := mock_log.NewMockLog(c)
+				db, mock, _ := sqlmock.New()
+
+				rows := sqlmock.NewRows([]string{"id", "name", "description", "admin"}).AddRow(uint64(1), "name", "", uint64(1))
+
+				mock.ExpectQuery(
+					regexp.QuoteMeta(
+						`SELECT * FROM projects WHERE projects.id IN (
+							SELECT project_id FROM projects_members WHERE member_id = $1
+						) UNION SELECT * FROM projects WHERE admin = $1`,
+					),
+				).WithArgs(id).WillReturnRows(rows)
+
+				return &ProjectRepository{db: db, log: log}
+			},
+			expectedResult: []*models.Project{{
+				ID:          1,
+				Name:        "name",
+				Description: "",
+				AdminID:     1,
+			}},
+			expectedError: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			repo := test.mockBehaviour(c, test.id)
+			res, err := repo.GetProjectsByUserId(test.id)
+
+			require.Equal(t, test.expectedResult, res)
+			require.Equal(t, test.expectedError, err)
+		})
+	}
+}

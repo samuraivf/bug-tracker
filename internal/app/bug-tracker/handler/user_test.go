@@ -228,3 +228,93 @@ func Test_getUserByUsername(t *testing.T) {
 		})
 	}
 }
+
+func Test_getProjectsByUserId(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, userID uint64) *Handler
+	err := errors.New("error")
+
+	tests := []struct {
+		name               string
+		mockBehaviour      mockBehaviour
+		userData           *services.TokenData
+		expectedStatusCode int
+		expectedReturnBody string
+	}{
+		{
+			name: "Error invalid user data",
+			mockBehaviour: func(c *gomock.Controller, userID uint64) *Handler {
+				return &Handler{}
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errUserNotFound.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error cannot get user projects",
+			mockBehaviour: func(c *gomock.Controller, userID uint64) *Handler {
+				project := mock_services.NewMockProject(c)
+
+				project.EXPECT().GetProjectsByUserId(userID).Return(nil, err)
+
+				serv := &services.Service{Project: project}
+
+				return &Handler{serv, nil, nil, nil}
+			},
+			userData: &services.TokenData{
+				UserID: 1,
+			},
+			expectedStatusCode: http.StatusNotFound,
+			expectedReturnBody: `{"message":"` + err.Error() + `"}` + "\n",
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, userID uint64) *Handler {
+				project := mock_services.NewMockProject(c)
+
+				project.EXPECT().GetProjectsByUserId(userID).Return([]*models.Project{{ID: 1}}, nil)
+
+				serv := &services.Service{Project: project}
+
+				return &Handler{serv, nil, nil, nil}
+			},
+			userData: &services.TokenData{
+				UserID: 1,
+			},
+			expectedStatusCode: http.StatusFound,
+			expectedReturnBody: `[{"id":1,"name":"","description":"","admin":0}]` + "\n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			userID := uint64(0)
+			if test.userData != nil {
+				userID = test.userData.UserID
+			}
+
+			handler := test.mockBehaviour(c, userID)
+
+			e := echo.New()
+			defer e.Close()
+
+			validator := validator.New()
+			e.Validator = newValidator(validator)
+			e.GET(projects, handler.getUserProjects)
+
+			req := httptest.NewRequest(http.MethodGet, projects, nil)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+			echoCtx := e.NewContext(req, rec)
+			echoCtx.Set(userDataCtx, test.userData)
+
+			defer rec.Result().Body.Close()
+			req.Close = true
+
+			require.NoError(t, handler.getUserProjects(echoCtx))
+			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
+			require.Equal(t, test.expectedReturnBody, rec.Body.String())
+		})
+	}
+}

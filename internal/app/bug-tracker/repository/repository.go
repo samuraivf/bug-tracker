@@ -26,6 +26,7 @@ type Project interface {
 	DeleteMember(memberData *dto.AddMemberDto, userID uint64) error
 	LeaveProject(projectID, userID uint64) error
 	SetNewAdmin(newAdminData *dto.NewAdminDto, adminID uint64) error
+	GetProjectsByUserId(id uint64) ([]*models.Project, error)
 }
 
 type Task interface {

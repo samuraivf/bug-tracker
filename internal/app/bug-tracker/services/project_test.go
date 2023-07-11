@@ -436,3 +436,56 @@ func Test_SetNewAdmin(t *testing.T) {
 		})
 	}
 }
+
+func Test_GetProjectsByMemberId(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, id uint64) *ProjectService
+	err := errors.New("error")
+
+	tests := []struct {
+		name           string
+		mockBehaviour  mockBehaviour
+		id             uint64
+		expectedResult []*models.Project
+		expectedError  error
+	}{
+		{
+			name: "Error",
+			mockBehaviour: func(c *gomock.Controller, id uint64) *ProjectService {
+				project := mock_repository.NewMockProject(c)
+
+				project.EXPECT().GetProjectsByUserId(id).Return(nil, err)
+
+				return &ProjectService{repo: repository.Repository{Project: project}}
+			},
+			id:             1,
+			expectedResult: nil,
+			expectedError:  err,
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, id uint64) *ProjectService {
+				project := mock_repository.NewMockProject(c)
+
+				project.EXPECT().GetProjectsByUserId(id).Return([]*models.Project{{ID: 1}}, nil)
+
+				return &ProjectService{repo: repository.Repository{Project: project}}
+			},
+			id:             1,
+			expectedResult: []*models.Project{{ID: 1}},
+			expectedError:  nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			service := test.mockBehaviour(c, test.id)
+			user, err := service.GetProjectsByUserId(test.id)
+
+			require.Equal(t, test.expectedResult, user)
+			require.Equal(t, test.expectedError, err)
+		})
+	}
+}

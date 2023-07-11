@@ -53,6 +53,7 @@ func Test_setRoutes(t *testing.T) {
 	{
 		user.GET(id, h.getUserById)
 		user.GET(username, h.getUserByUsername)
+		user.GET(projects, h.getUserProjects)
 	}
 
 	e = setRoutes(e, h)

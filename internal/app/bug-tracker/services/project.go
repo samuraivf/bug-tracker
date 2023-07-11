@@ -45,3 +45,7 @@ func (s *ProjectService) LeaveProject(projectID, userID uint64) error {
 func (s *ProjectService) SetNewAdmin(newAdminData *dto.NewAdminDto, adminID uint64) error {
 	return s.repo.SetNewAdmin(newAdminData, adminID)
 }
+
+func (s *ProjectService) GetProjectsByUserId(id uint64) ([]*models.Project, error) {
+	return s.repo.GetProjectsByUserId(id)
+}
