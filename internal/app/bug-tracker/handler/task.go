@@ -121,6 +121,34 @@ func (h *Handler) getTaskById(c echo.Context) error {
 	return c.JSON(http.StatusFound, task)
 }
 
+func (h *Handler) getTaskByIdWithAssignee(c echo.Context) error {
+	id, err := h.params.GetIdParam(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	task, err := h.service.Task.GetTaskById(id)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, newErrorMessage(errTaskNotFound))
+	}
+
+	if !task.Assignee.Valid {
+		return c.JSON(http.StatusFound, dto.TaskByIdWithAssignee{
+			Task: task,
+		})
+	}
+
+	assignee, err := h.service.GetUserById(uint64(task.Assignee.Int64))
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(errTaskNotFound))
+	}
+
+	return c.JSON(http.StatusFound, dto.TaskByIdWithAssignee{
+		Task:     task,
+		Assignee: assignee,
+	})
+}
+
 func (h *Handler) deleteTask(c echo.Context) error {
 	taskData := new(dto.DeleteTaskDto)
 	userData, err := getUserData(c)

@@ -24,6 +24,7 @@ const (
 	task           = "/task"
 	workOnTask     = "/work-on-task"
 	stopWorkOnTask = "/stop-work-on-task"
+	withAssignee   = "/with-assignee" + id
 
 	user     = "/user"
 	username = "/:username"

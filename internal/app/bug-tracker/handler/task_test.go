@@ -666,6 +666,203 @@ func Test_getTaskById(t *testing.T) {
 	}
 }
 
+func Test_getTaskByIdWithAssignee(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler
+	err := errors.New("error")
+	successReturnBody := `{"task":{"id":1,"name":"name","description":"description","priority":"high","projectId":1,"taskType":"TO DO","assignee":{"Int64":1,"Valid":true},"createdAt":{"Time":"1111-11-11T11:11:11Z","Valid":true},"performTo":{"Time":"1111-11-11T11:11:11Z","Valid":true}},"assignee":{"id":1,"name":"","username":"","email":""}}` + "\n"
+
+	tests := []struct {
+		name               string
+		mockBehaviour      mockBehaviour
+		id                 uint64
+		paramId            string
+		expectedStatusCode int
+		expectedReturnBody string
+	}{
+		{
+			name: "Error in params.GetIdParam",
+			mockBehaviour: func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler {
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(uint64(0), err)
+
+				return &Handler{params: params}
+			},
+			paramId:            "1b",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + err.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error cannot get task with assignee",
+			mockBehaviour: func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler {
+				task := mock_services.NewMockTask(c)
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(id, nil)
+
+				task.EXPECT().GetTaskById(id).Return(nil, err)
+
+				serv := &services.Service{Task: task}
+
+				return &Handler{serv, nil, nil, params}
+			},
+			id:                 1,
+			paramId:            "1",
+			expectedStatusCode: http.StatusNotFound,
+			expectedReturnBody: `{"message":"` + errTaskNotFound.Error() + `"}` + "\n",
+		},
+		{
+			name: "Assignee is not valid",
+			mockBehaviour: func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler {
+				task := mock_services.NewMockTask(c)
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(id, nil)
+
+				task.EXPECT().GetTaskById(id).Return(
+					&models.Task{
+						ID:          1,
+						Name:        "name",
+						Description: "description",
+						Priority:    "high",
+						ProjectID:   1,
+						TaskType:    "TO DO",
+						Assignee:    sql.NullInt64{Int64: 0, Valid: false},
+						CreatedAt: sql.NullTime{
+							Time:  time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+							Valid: true,
+						},
+						PerformTo: sql.NullTime{
+							Time:  time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+							Valid: true,
+						},
+					},
+						nil,
+				)
+
+				serv := &services.Service{Task: task}
+
+				return &Handler{serv, nil, nil, params}
+			},
+			id:                 1,
+			paramId:            "1",
+			expectedStatusCode: http.StatusFound,
+			expectedReturnBody: `{"task":{"id":1,"name":"name","description":"description","priority":"high","projectId":1,"taskType":"TO DO","assignee":{"Int64":0,"Valid":false},"createdAt":{"Time":"1111-11-11T11:11:11Z","Valid":true},"performTo":{"Time":"1111-11-11T11:11:11Z","Valid":true}},"assignee":null}` + "\n",
+		},
+		{
+			name: "Error cannot get assignee",
+			mockBehaviour: func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler {
+				task := mock_services.NewMockTask(c)
+				user := mock_services.NewMockUser(c)
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(id, nil)
+
+				task.EXPECT().GetTaskById(id).Return(&models.Task{
+					ID:          1,
+					Name:        "name",
+					Description: "description",
+					Priority:    "high",
+					ProjectID:   1,
+					TaskType:    "TO DO",
+					Assignee:    sql.NullInt64{Int64: 1, Valid: true},
+					CreatedAt: sql.NullTime{
+						Time:  time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+						Valid: true,
+					},
+					PerformTo: sql.NullTime{
+						Time:  time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+						Valid: true,
+					},
+				},
+					nil,
+				)
+				user.EXPECT().GetUserById(uint64(1)).Return(nil, err)
+
+				serv := &services.Service{Task: task, User: user}
+
+				return &Handler{serv, nil, nil, params}
+			},
+			id:                 1,
+			paramId:            "1",
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedReturnBody: `{"message":"` + errTaskNotFound.Error() + `"}` + "\n",
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, id uint64, ctx echo.Context) *Handler {
+				task := mock_services.NewMockTask(c)
+				user := mock_services.NewMockUser(c)
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(id, nil)
+
+				task.EXPECT().GetTaskById(id).Return(&models.Task{
+					ID:          1,
+					Name:        "name",
+					Description: "description",
+					Priority:    "high",
+					ProjectID:   1,
+					TaskType:    "TO DO",
+					Assignee:    sql.NullInt64{Int64: 1, Valid: true},
+					CreatedAt: sql.NullTime{
+						Time:  time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+						Valid: true,
+					},
+					PerformTo: sql.NullTime{
+						Time:  time.Date(1111, 11, 11, 11, 11, 11, 0, time.UTC),
+						Valid: true,
+					},
+				},
+					nil,
+				)
+				user.EXPECT().GetUserById(uint64(1)).Return(&models.User{ID: 1}, nil)
+
+				serv := &services.Service{Task: task, User: user}
+
+				return &Handler{serv, nil, nil, params}
+			},
+			id:                 1,
+			paramId:            "1",
+			expectedStatusCode: http.StatusFound,
+			expectedReturnBody: successReturnBody,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			e := echo.New()
+			defer e.Close()
+
+			validator := validator.New()
+			e.Validator = newValidator(validator)
+
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+
+			echoCtx := e.NewContext(req, rec)
+
+			handler := test.mockBehaviour(c, test.id, echoCtx)
+			e.GET(id, handler.getTaskByIdWithAssignee)
+
+			echoCtx.SetPath(withAssignee)
+			echoCtx.SetParamNames("id")
+			echoCtx.SetParamValues(test.paramId)
+
+			defer rec.Result().Body.Close()
+			req.Close = true
+
+			require.NoError(t, handler.getTaskByIdWithAssignee(echoCtx))
+			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
+			require.Equal(t, test.expectedReturnBody, rec.Body.String())
+		})
+	}
+}
+
 func Test_deleteTask(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, taskData *dto.DeleteTaskDto, userID uint64) *Handler
 	err := errors.New("error")
