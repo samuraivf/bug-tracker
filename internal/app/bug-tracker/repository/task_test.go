@@ -163,19 +163,12 @@ func Test_WorkOnTask(t *testing.T) {
 			userID: 1,
 			mockBehaviour: func(c *gomock.Controller, workOnTaskData *dto.WorkOnTaskDto, userID uint64) *TaskRepository {
 				admin := mock_repository.NewMockadmin(c)
-				db, mock, _ := sqlmock.New()
+				member := mock_repository.NewMockmember(c)
 
-				mock.ExpectQuery(
-					regexp.QuoteMeta(
-						"SELECT member_id FROM projects_members WHERE project_id = $1 AND member_id = $2",
-					),
-				).WithArgs(
-					workOnTaskData.ProjectID,
-					userID,
-				).WillReturnError(err)
+				member.EXPECT().IsMember(workOnTaskData.ProjectID, userID).Return(ErrNoRights)
 				admin.EXPECT().IsAdmin(workOnTaskData.ProjectID, userID).Return(err)
 
-				return &TaskRepository{db: db, admin: admin}
+				return &TaskRepository{member: member, admin: admin}
 			},
 			expectedError: ErrNoRights,
 		},
@@ -187,19 +180,11 @@ func Test_WorkOnTask(t *testing.T) {
 			},
 			userID: 1,
 			mockBehaviour: func(c *gomock.Controller, workOnTaskData *dto.WorkOnTaskDto, userID uint64) *TaskRepository {
-				admin := mock_repository.NewMockadmin(c)
+				member := mock_repository.NewMockmember(c)
 				db, mock, _ := sqlmock.New()
 				log := mock_log.NewMockLog(c)
 
-				rows := sqlmock.NewRows([]string{"member_id"}).AddRow(uint64(1))
-				mock.ExpectQuery(
-					regexp.QuoteMeta(
-						"SELECT member_id FROM projects_members WHERE project_id = $1 AND member_id = $2",
-					),
-				).WithArgs(
-					workOnTaskData.ProjectID,
-					userID,
-				).WillReturnRows(rows)
+				member.EXPECT().IsMember(workOnTaskData.ProjectID, userID).Return(nil)
 
 				mock.ExpectExec(
 					regexp.QuoteMeta(
@@ -211,7 +196,7 @@ func Test_WorkOnTask(t *testing.T) {
 				).WillReturnError(err)
 				log.EXPECT().Error(err)
 
-				return &TaskRepository{db: db, log: log, admin: admin}
+				return &TaskRepository{db: db, log: log, member: member}
 			},
 			expectedError: err,
 		},
@@ -223,19 +208,11 @@ func Test_WorkOnTask(t *testing.T) {
 			},
 			userID: 1,
 			mockBehaviour: func(c *gomock.Controller, workOnTaskData *dto.WorkOnTaskDto, userID uint64) *TaskRepository {
-				admin := mock_repository.NewMockadmin(c)
+				member := mock_repository.NewMockmember(c)
 				db, mock, _ := sqlmock.New()
 				log := mock_log.NewMockLog(c)
 
-				rows := sqlmock.NewRows([]string{"member_id"}).AddRow(uint64(1))
-				mock.ExpectQuery(
-					regexp.QuoteMeta(
-						"SELECT member_id FROM projects_members WHERE project_id = $1 AND member_id = $2",
-					),
-				).WithArgs(
-					workOnTaskData.ProjectID,
-					userID,
-				).WillReturnRows(rows)
+				member.EXPECT().IsMember(workOnTaskData.ProjectID, userID).Return(nil)
 
 				mock.ExpectExec(
 					regexp.QuoteMeta(
@@ -246,7 +223,7 @@ func Test_WorkOnTask(t *testing.T) {
 					workOnTaskData.TaskID,
 				).WillReturnResult(sqlmock.NewResult(1, 1))
 
-				return &TaskRepository{db: db, log: log, admin: admin}
+				return &TaskRepository{db: db, log: log, member: member}
 			},
 			expectedError: nil,
 		},
@@ -285,19 +262,12 @@ func Test_StopWorkOnTask(t *testing.T) {
 			userID: 1,
 			mockBehaviour: func(c *gomock.Controller, workOnTaskData *dto.WorkOnTaskDto, userID uint64) *TaskRepository {
 				admin := mock_repository.NewMockadmin(c)
-				db, mock, _ := sqlmock.New()
+				member := mock_repository.NewMockmember(c)
 
-				mock.ExpectQuery(
-					regexp.QuoteMeta(
-						"SELECT member_id FROM projects_members WHERE project_id = $1 AND member_id = $2",
-					),
-				).WithArgs(
-					workOnTaskData.ProjectID,
-					userID,
-				).WillReturnError(err)
+				member.EXPECT().IsMember(workOnTaskData.ProjectID, userID).Return(ErrNoRights)
 				admin.EXPECT().IsAdmin(workOnTaskData.ProjectID, userID).Return(err)
 
-				return &TaskRepository{db: db, admin: admin}
+				return &TaskRepository{member: member, admin: admin}
 			},
 			expectedError: ErrNoRights,
 		},
@@ -309,19 +279,11 @@ func Test_StopWorkOnTask(t *testing.T) {
 			},
 			userID: 1,
 			mockBehaviour: func(c *gomock.Controller, workOnTaskData *dto.WorkOnTaskDto, userID uint64) *TaskRepository {
-				admin := mock_repository.NewMockadmin(c)
 				db, mock, _ := sqlmock.New()
 				log := mock_log.NewMockLog(c)
+				member := mock_repository.NewMockmember(c)
 
-				rows := sqlmock.NewRows([]string{"member_id"}).AddRow(uint64(1))
-				mock.ExpectQuery(
-					regexp.QuoteMeta(
-						"SELECT member_id FROM projects_members WHERE project_id = $1 AND member_id = $2",
-					),
-				).WithArgs(
-					workOnTaskData.ProjectID,
-					userID,
-				).WillReturnRows(rows)
+				member.EXPECT().IsMember(workOnTaskData.ProjectID, userID).Return(nil)
 
 				mock.ExpectExec(
 					regexp.QuoteMeta(
@@ -332,7 +294,7 @@ func Test_StopWorkOnTask(t *testing.T) {
 				).WillReturnError(err)
 				log.EXPECT().Error(err)
 
-				return &TaskRepository{db: db, log: log, admin: admin}
+				return &TaskRepository{db: db, log: log, member: member}
 			},
 			expectedError: err,
 		},
@@ -344,19 +306,12 @@ func Test_StopWorkOnTask(t *testing.T) {
 			},
 			userID: 1,
 			mockBehaviour: func(c *gomock.Controller, workOnTaskData *dto.WorkOnTaskDto, userID uint64) *TaskRepository {
-				admin := mock_repository.NewMockadmin(c)
 				db, mock, _ := sqlmock.New()
 				log := mock_log.NewMockLog(c)
 
-				rows := sqlmock.NewRows([]string{"member_id"}).AddRow(uint64(1))
-				mock.ExpectQuery(
-					regexp.QuoteMeta(
-						"SELECT member_id FROM projects_members WHERE project_id = $1 AND member_id = $2",
-					),
-				).WithArgs(
-					workOnTaskData.ProjectID,
-					userID,
-				).WillReturnRows(rows)
+				member := mock_repository.NewMockmember(c)
+
+				member.EXPECT().IsMember(workOnTaskData.ProjectID, userID).Return(nil)
 
 				mock.ExpectExec(
 					regexp.QuoteMeta(
@@ -366,7 +321,7 @@ func Test_StopWorkOnTask(t *testing.T) {
 					workOnTaskData.TaskID,
 				).WillReturnResult(sqlmock.NewResult(1, 1))
 
-				return &TaskRepository{db: db, log: log, admin: admin}
+				return &TaskRepository{db: db, log: log, member: member}
 			},
 			expectedError: nil,
 		},

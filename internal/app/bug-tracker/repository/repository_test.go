@@ -17,10 +17,11 @@ func Test_NewRepository(t *testing.T) {
 
 	log := mock_log.NewMockLog(c)
 	admin := new_adminStrategy(db, log)
+	member := new_memberStrategy(db, log)
 	expectedRepo := &Repository{
 		User:    NewUserRepo(db, log),
-		Project: NewProjectRepo(db, log, admin),
-		Task:    NewTaskRepo(db, log, admin),
+		Project: NewProjectRepo(db, log, admin, member),
+		Task:    NewTaskRepo(db, log, admin, member),
 	}
 	repo := NewRepository(db, log)
 

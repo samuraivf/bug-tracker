@@ -828,6 +828,130 @@ func Test_deleteMember(t *testing.T) {
 	}
 }
 
+func Test_getMembers(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, projectID, userID uint64, ctx echo.Context) *Handler
+	err := errors.New("error")
+
+	tests := []struct {
+		name               string
+		mockBehaviour      mockBehaviour
+		id                 uint64
+		userData           *services.TokenData
+		paramId            string
+		expectedStatusCode int
+		expectedReturnBody string
+	}{
+		{
+			name: "Error in params.GetIdParam",
+			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64, ctx echo.Context) *Handler {
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(uint64(0), err)
+
+				return &Handler{params: params}
+			},
+			paramId:            "1b",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + err.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error invalid user data",
+			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64, ctx echo.Context) *Handler {
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(projectID, nil)
+
+				return &Handler{params: params}
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedReturnBody: `{"message":"` + errUserNotFound.Error() + `"}` + "\n",
+		},
+		{
+			name: "Error cannot get members",
+			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64, ctx echo.Context) *Handler {
+				project := mock_services.NewMockProject(c)
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(projectID, nil)
+
+				project.EXPECT().GetMembers(projectID, userID).Return(nil, err)
+
+				serv := &services.Service{Project: project}
+
+				return &Handler{serv, nil, nil, params}
+			},
+			id: 1,
+			userData: &services.TokenData{
+				UserID: 1,
+			},
+			paramId:            "1",
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedReturnBody: `{"message":"` + err.Error() + `"}` + "\n",
+		},
+		{
+			name: "OK",
+			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64, ctx echo.Context) *Handler {
+				project := mock_services.NewMockProject(c)
+				params := mock_handler.NewMockParams(c)
+
+				params.EXPECT().GetIdParam(ctx).Return(projectID, nil)
+
+				project.EXPECT().GetMembers(projectID, userID).Return([]*models.User{{ID: 1}}, nil)
+
+				serv := &services.Service{Project: project}
+
+				return &Handler{serv, nil, nil, params}
+			},
+			id: 1,
+			userData: &services.TokenData{
+				UserID: 1,
+			},
+			paramId:            "1",
+			expectedStatusCode: http.StatusOK,
+			expectedReturnBody: `[{"id":1,"name":"","username":"","email":""}]` + "\n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			userID := uint64(0)
+			if test.userData != nil {
+				userID = test.userData.UserID
+			}
+
+			e := echo.New()
+			defer e.Close()
+
+			validator := validator.New()
+			e.Validator = newValidator(validator)
+
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+
+			echoCtx := e.NewContext(req, rec)
+
+			handler := test.mockBehaviour(c, test.id, userID, echoCtx)
+			e.GET(id, handler.getMembers)
+
+			echoCtx.SetPath(members)
+			echoCtx.SetParamNames("id")
+			echoCtx.SetParamValues(test.paramId)
+			echoCtx.Set(userDataCtx, test.userData)
+
+			defer rec.Result().Body.Close()
+			req.Close = true
+
+			require.NoError(t, handler.getMembers(echoCtx))
+			require.Equal(t, test.expectedStatusCode, echoCtx.Response().Status)
+			require.Equal(t, test.expectedReturnBody, rec.Body.String())
+		})
+	}
+}
+
 func Test_leaveProject(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, projectID, userID uint64, ctx echo.Context) *Handler
 	err := errors.New("error")

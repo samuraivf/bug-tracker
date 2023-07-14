@@ -14,16 +14,18 @@ var (
 )
 
 type ProjectRepository struct {
-	db    *sql.DB
-	log   log.Log
-	admin admin
+	db     *sql.DB
+	log    log.Log
+	admin  admin
+	member member
 }
 
-func NewProjectRepo(db *sql.DB, log log.Log, admin admin) Project {
+func NewProjectRepo(db *sql.DB, log log.Log, admin admin, member member) Project {
 	return &ProjectRepository{
-		db:    db,
-		log:   log,
-		admin: admin,
+		db:     db,
+		log:    log,
+		admin:  admin,
+		member: member,
 	}
 }
 
@@ -126,6 +128,32 @@ func (r *ProjectRepository) DeleteMember(memberData *dto.AddMemberDto, userID ui
 	r.log.Infof("Delete member with id=%d from project with id=%d", memberData.MemberID, memberData.ProjectID)
 
 	return nil
+}
+
+func (r *ProjectRepository) GetMembers(projectID, userID uint64) ([]*models.User, error) {
+	if r.member.IsMember(projectID, userID) != nil && r.admin.IsAdmin(projectID, userID) != nil {
+		return nil, ErrNoRights
+	}
+
+	rows, err := r.db.Query("SELECT * FROM users WHERE users.id IN (SELECT member_id FROM projects_members WHERE projects_members.project_id = $1)", projectID)
+	if err != nil {
+		r.log.Error(err)
+		return nil, err
+	}
+
+	members := make([]*models.User, 0)
+	for rows.Next() {
+		member := new(models.User)
+		err := rows.Scan(&member.ID, &member.Name, &member.Username, &member.Password, &member.Email)
+		if err != nil {
+			r.log.Error(err)
+			return nil, err
+		}
+
+		members = append(members, member)
+	}
+
+	return members, nil
 }
 
 func (r *ProjectRepository) LeaveProject(projectID, userID uint64) error {

@@ -151,6 +151,25 @@ func (h *Handler) deleteMember(c echo.Context) error {
 	return c.JSON(http.StatusOK, true)
 }
 
+func (h *Handler) getMembers(c echo.Context) error {
+	id, err := h.params.GetIdParam(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	userData, err := getUserData(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, newErrorMessage(err))
+	}
+
+	members, err := h.service.GetMembers(id, userData.UserID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, newErrorMessage(err))
+	}
+
+	return c.JSON(http.StatusOK, members)
+}
+
 func (h *Handler) leaveProject(c echo.Context) error {
 	id, err := h.params.GetIdParam(c)
 	if err != nil {

@@ -470,6 +470,100 @@ func Test_DeleteMember(t *testing.T) {
 	}
 }
 
+func Test_GetMembers(t *testing.T) {
+	type mockBehaviour func(c *gomock.Controller, projectID, userID uint64) *ProjectRepository
+	err := errors.New("error")
+
+	tests := []struct {
+		name           string
+		projectID      uint64
+		userID         uint64
+		mockBehaviour  mockBehaviour
+		expectedError  error
+		expectedResult []*models.User
+	}{
+		{
+			name:      "Error in admin",
+			projectID: 1,
+			userID:    1,
+			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64) *ProjectRepository {
+				admin := mock_repository.NewMockadmin(c)
+				member := mock_repository.NewMockmember(c)
+
+				member.EXPECT().IsMember(projectID, userID).Return(ErrNoRights)
+				admin.EXPECT().IsAdmin(projectID, userID).Return(ErrNoRights)
+
+				return &ProjectRepository{admin: admin, member: member}
+			},
+			expectedError:  ErrNoRights,
+			expectedResult: nil,
+		},
+		{
+			name:      "Error cannot get members",
+			projectID: 1,
+			userID:    1,
+			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64) *ProjectRepository {
+				db, mock, _ := sqlmock.New()
+				member := mock_repository.NewMockmember(c)
+				log := mock_log.NewMockLog(c)
+
+				member.EXPECT().IsMember(projectID, userID).Return(nil)
+
+				mock.ExpectQuery(
+					regexp.QuoteMeta("SELECT * FROM users WHERE users.id IN (SELECT member_id FROM projects_members WHERE projects_members.project_id = $1)"),
+				).WithArgs(projectID).WillReturnError(err)
+
+				log.EXPECT().Error(err).Return()
+
+				return &ProjectRepository{db: db, log: log, member: member}
+			},
+			expectedError:  err,
+			expectedResult: nil,
+		},
+		{
+			name:      "OK",
+			projectID: 1,
+			userID:    1,
+			mockBehaviour: func(c *gomock.Controller, projectID, userID uint64) *ProjectRepository {
+				db, mock, _ := sqlmock.New()
+				member := mock_repository.NewMockmember(c)
+
+				member.EXPECT().IsMember(projectID, userID).Return(nil)
+
+				rows := sqlmock.NewRows([]string{"id", "name", "username", "password", "email"}).AddRow(uint64(1), "name1", "username1", "password1", "email1")
+				mock.ExpectQuery(
+					regexp.QuoteMeta("SELECT * FROM users WHERE users.id IN (SELECT member_id FROM projects_members WHERE projects_members.project_id = $1)"),
+				).WithArgs(projectID).WillReturnRows(rows)
+
+				return &ProjectRepository{db: db, log: nil, member: member}
+			},
+			expectedError: nil,
+			expectedResult: []*models.User{
+				{
+					ID:       1,
+					Name:     "name1",
+					Username: "username1",
+					Password: "password1",
+					Email:    "email1",
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			c := gomock.NewController(t)
+			defer c.Finish()
+
+			repo := test.mockBehaviour(c, test.projectID, test.userID)
+			res, err := repo.GetMembers(test.projectID, test.userID)
+
+			require.Equal(t, test.expectedError, err)
+			require.Equal(t, test.expectedResult, res)
+		})
+	}
+}
+
 func Test_LeaveProject(t *testing.T) {
 	type mockBehaviour func(c *gomock.Controller, projectID, userID uint64) *ProjectRepository
 	err := errors.New("error")

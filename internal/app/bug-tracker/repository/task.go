@@ -10,16 +10,18 @@ import (
 )
 
 type TaskRepository struct {
-	db    *sql.DB
-	log   log.Log
-	admin admin
+	db     *sql.DB
+	log    log.Log
+	admin  admin
+	member member
 }
 
-func NewTaskRepo(db *sql.DB, log log.Log, admin admin) Task {
+func NewTaskRepo(db *sql.DB, log log.Log, admin admin, member member) Task {
 	return &TaskRepository{
-		db:    db,
-		log:   log,
-		admin: admin,
+		db:     db,
+		log:    log,
+		admin:  admin,
+		member: member,
 	}
 }
 
@@ -50,13 +52,7 @@ func (r *TaskRepository) CreateTask(taskData *dto.CreateTaskDto, userID uint64) 
 }
 
 func (r *TaskRepository) WorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID uint64) error {
-	result := r.db.QueryRow(
-		"SELECT member_id FROM projects_members WHERE project_id = $1 AND member_id = $2",
-		workOnTaskData.ProjectID,
-		userID,
-	)
-	memberId := 0
-	if result.Scan(&memberId) != nil && r.admin.IsAdmin(workOnTaskData.ProjectID, userID) != nil {
+	if r.member.IsMember(workOnTaskData.ProjectID, userID) != nil && r.admin.IsAdmin(workOnTaskData.ProjectID, userID) != nil {
 		return ErrNoRights
 	}
 
@@ -70,13 +66,7 @@ func (r *TaskRepository) WorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID ui
 }
 
 func (r *TaskRepository) StopWorkOnTask(workOnTaskData *dto.WorkOnTaskDto, userID uint64) error {
-	result := r.db.QueryRow(
-		"SELECT member_id FROM projects_members WHERE project_id = $1 AND member_id = $2",
-		workOnTaskData.ProjectID,
-		userID,
-	)
-	memberId := 0
-	if result.Scan(&memberId) != nil && r.admin.IsAdmin(workOnTaskData.ProjectID, userID) != nil {
+	if r.member.IsMember(workOnTaskData.ProjectID, userID) != nil && r.admin.IsAdmin(workOnTaskData.ProjectID, userID) != nil {
 		return ErrNoRights
 	}
 

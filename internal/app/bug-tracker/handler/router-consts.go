@@ -20,6 +20,7 @@ const (
 	leave        = "/leave/:id"
 	setAdmin     = "/set-admin"
 	withTasks    = "/with-tasks" + id
+	members      = "/members" + id
 
 	task           = "/task"
 	workOnTask     = "/work-on-task"

@@ -175,6 +175,21 @@ func (mr *MockProjectMockRecorder) DeleteProject(projectID, userID interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteProject", reflect.TypeOf((*MockProject)(nil).DeleteProject), projectID, userID)
 }
 
+// GetMembers mocks base method.
+func (m *MockProject) GetMembers(projectID, userID uint64) ([]*models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMembers", projectID, userID)
+	ret0, _ := ret[0].([]*models.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMembers indicates an expected call of GetMembers.
+func (mr *MockProjectMockRecorder) GetMembers(projectID, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMembers", reflect.TypeOf((*MockProject)(nil).GetMembers), projectID, userID)
+}
+
 // GetProjectById mocks base method.
 func (m *MockProject) GetProjectById(id uint64) (*models.Project, error) {
 	m.ctrl.T.Helper()

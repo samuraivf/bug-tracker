@@ -737,7 +737,7 @@ func Test_getTaskByIdWithAssignee(t *testing.T) {
 							Valid: true,
 						},
 					},
-						nil,
+					nil,
 				)
 
 				serv := &services.Service{Task: task}

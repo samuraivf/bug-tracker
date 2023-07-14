@@ -38,6 +38,10 @@ func (s *ProjectService) DeleteMember(memberData *dto.AddMemberDto, userID uint6
 	return s.repo.DeleteMember(memberData, userID)
 }
 
+func (s *ProjectService) GetMembers(projectID, userID uint64) ([]*models.User, error) {
+	return s.repo.GetMembers(projectID, userID)
+}
+
 func (s *ProjectService) LeaveProject(projectID, userID uint64) error {
 	return s.repo.LeaveProject(projectID, userID)
 }

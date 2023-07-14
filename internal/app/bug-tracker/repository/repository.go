@@ -24,6 +24,7 @@ type Project interface {
 	UpdateProject(projectData *dto.UpdateProjectDto, userID uint64) error
 	AddMember(memberData *dto.AddMemberDto, userID uint64) error
 	DeleteMember(memberData *dto.AddMemberDto, userID uint64) error
+	GetMembers(projectID, userID uint64) ([]*models.User, error)
 	LeaveProject(projectID, userID uint64) error
 	SetNewAdmin(newAdminData *dto.NewAdminDto, adminID uint64) error
 	GetProjectsByUserId(id uint64) ([]*models.Project, error)
@@ -47,10 +48,11 @@ type Repository struct {
 
 func NewRepository(db *sql.DB, log log.Log) *Repository {
 	admin := new_adminStrategy(db, log)
+	member := new_memberStrategy(db, log)
 
 	return &Repository{
 		User:    NewUserRepo(db, log),
-		Project: NewProjectRepo(db, log, admin),
-		Task:    NewTaskRepo(db, log, admin),
+		Project: NewProjectRepo(db, log, admin, member),
+		Task:    NewTaskRepo(db, log, admin, member),
 	}
 }

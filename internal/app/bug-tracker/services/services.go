@@ -44,6 +44,7 @@ type Project interface {
 	UpdateProject(projectData *dto.UpdateProjectDto, userID uint64) error
 	AddMember(memberData *dto.AddMemberDto, userID uint64) error
 	DeleteMember(memberData *dto.AddMemberDto, userID uint64) error
+	GetMembers(projectID, userID uint64) ([]*models.User, error)
 	LeaveProject(projectID, userID uint64) error
 	SetNewAdmin(newAdmintData *dto.NewAdminDto, adminID uint64) error
 	GetProjectsByUserId(id uint64) ([]*models.Project, error)
