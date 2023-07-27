@@ -1,0 +1,100 @@
+version: "3.8"
+
+services:
+  bug-tracker:
+    image: bug-tracker
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      ./wait-for-postgres.sh db make migrate-up
+      ./bug-tracker
+      "
+    ports: 
+      - 7000:7000
+    depends_on:
+      - db
+      - redis
+      - kafka
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_URL=${POSTGRES_URL}
+
+  mail-sender:
+    image: mail-sender
+    command: ./mail-sender
+    depends_on:
+      - kafka
+    environment:
+      - MAIL_FROM=${MAIL_FROM}
+      - MAIL_FROM_APP_PASSWORD=${MAIL_FROM_APP_PASSWORD}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - BUG_TRACKER_ADDRESS=${BUG_TRACKER_ADDRESS}
+  
+  db:
+    restart: always
+    image: postgres:alpine
+    volumes:
+      - ./.database/postgres/data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=db
+    ports:
+      - 5432:5432
+
+  redis:
+    restart: always
+    image: redis:alpine
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - redis:/data
+    ports:
+      - 6379:6379
+  
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 2181:2181
+  
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - 9092:9092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092 
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  
+  init-kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - kafka
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics --bootstrap-server kafka:29092 --list
+
+      echo -e 'Creating kafka topics'
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic mail --replication-factor 1 --partitions 1
+
+      echo -e 'Successfully created the following topics:'
+      kafka-topics --bootstrap-server kafka:29092 --list
+      "
+
+
+volumes:
+  db:
+    driver: local
+  redis:
+    driver: local

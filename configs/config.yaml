@@ -1,15 +1,15 @@
 server-port: 7000
 
 db:
-  host: localhost
+  host: db
   port: 5432
   user: postgres
   name: db
 
 redis:
-  host: localhost
+  host: redis
   port: 6379
 
 kafka:
-  brokers: localhost:9092
+  brokers: kafka:9092
   topic: mail
